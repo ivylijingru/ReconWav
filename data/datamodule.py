@@ -1,4 +1,5 @@
 import torch.utils.data as Data
+import pytorch_lightning as pl
 
 from .dataset import ReconstrcutDataset
 
@@ -9,12 +10,17 @@ class ReconstructDataModule(pl.LightningDataModule):
         train_manifest_path,
         val_manifest_path,
         test_manifest_path,
+        mel_frame_rate,
+        input_sec,
+        batch_size,
+        train_shuffle,
+        num_workers,
     ) -> None:
         super().__init__()
 
-        self.train_dataset = ReconstrcutDataset(train_manifest_path)
-        self.val_dataset = ReconstrcutDataset(val_manifest_path)
-        self.test_dataset = ReconstrcutDataset(test_manifest_path)
+        self.train_dataset = ReconstrcutDataset(train_manifest_path, mel_frame_rate, input_sec)
+        self.val_dataset = ReconstrcutDataset(val_manifest_path, mel_frame_rate, input_sec)
+        self.test_dataset = ReconstrcutDataset(test_manifest_path, mel_frame_rate, input_sec)
 
         self.batch_size = batch_size
         self.train_shuffle = train_shuffle

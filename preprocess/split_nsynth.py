@@ -4,14 +4,18 @@ import json
 random.seed(2022)
 
 
-def write_input_json(root_dir, audio_dir):
+def write_input_json(root_dir, audio_dir, mel_dir, vggish_dir):
     input_json = os.path.join(root_dir, "nsynth.json")
     input_json_f = open(input_json, "w")
     
     data_list = []
     for file_name in os.listdir(audio_dir):
-        file_path = os.path.join(audio_dir, file_name)
-        data = dict(wav_path=file_path)
+        wav_path = os.path.join(audio_dir, file_name)
+        mel_path = os.path.join(mel_dir, file_name.split(".")[0] + "_mel.npy")
+        vggish_path = os.path.join(vggish_dir, file_name.split(".")[0] + ".npy")
+        assert os.path.exists(mel_path)
+        assert os.path.exists(vggish_path)
+        data = dict(wav_path=wav_path, mel_path=mel_path, vggish_path=vggish_path)
         data_list.append(data)
 
     for data in data_list:
@@ -58,5 +62,8 @@ def split_synth_train(root_dir, valid=0.15, test=0.15):
 
 if __name__ == '__main__':
     root_dir = "../nsynth"
-    write_input_json(root_dir,"../../nsynth-train/audio")
+    audio_dir = "../../nsynth-train/audio"
+    mel_dir = "mel_feature"
+    vggish_dir = "vggish_feature"
+    write_input_json(root_dir, audio_dir, mel_dir, vggish_dir)
     split_synth_train(root_dir)
