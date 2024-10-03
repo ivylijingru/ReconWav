@@ -27,7 +27,7 @@ class ReconstructDataModule(pl.LightningDataModule):
         self.num_workers = num_workers
 
     def train_dataloader(self):
-        return Data.DataLoader(self.train_dataset, batch_size=self.batch_size, shuffule=self.train_shuffle, num_workers=self.num_workers)
+        return Data.DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=self.train_shuffle, num_workers=self.num_workers)
 
     def val_dataloader(self):
         return Data.DataLoader(self.val_dataset, batch_size=self.batch_size, num_workers=self.num_workers)

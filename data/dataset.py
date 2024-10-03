@@ -30,13 +30,13 @@ class ReconstrcutDataset(Data.Dataset):
         vgg
         """
         output_data = dict()
-        mel = torch.from_numpy(np.load(os.path.join("preprocess", self.data[idx]["mel_path"])))
+        mel = torch.from_numpy(np.load(os.path.join("preprocess", self.data[idx]["mel_path"]))).float()
         output_data["mel"] = torch.zeros(mel.shape[0], self.target_seq_len)
         if mel.shape[1] < self.target_seq_len:
             output_data["mel"][:, :mel.shape[1]] = mel
         elif mel.shape[1] >= self.target_seq_len:
             output_data["mel"] = mel[:, :self.target_seq_len]
 
-        output_data["vggish"] = torch.from_numpy(np.load(os.path.join("preprocess", self.data[idx]["vggish_path"])))
+        output_data["vggish"] = torch.from_numpy(np.load(os.path.join("preprocess", self.data[idx]["vggish_path"]))).float()
         return output_data
 

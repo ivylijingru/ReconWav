@@ -19,7 +19,7 @@ class ReconstructModel(pl.LightningModule):
         self.loss_fn = get_loss_fn()
 
     def training_step(self, batch, batch_idx) -> Any:
-        loss_dict, _ = self.common_step(batch)
+        loss_dict = self.common_step(batch)
 
         self.log("lr", self.optimizers().optimizer.param_groups[0]["lr"])
         self.log_dict_prefix(loss_dict, "train")
@@ -29,7 +29,7 @@ class ReconstructModel(pl.LightningModule):
         return loss_dict["loss/total"]
 
     def validation_step(self, batch, batch_idx) -> Any:
-        loss_dict, _ = self.common_step(batch)
+        loss_dict = self.common_step(batch)
 
         self.log_dict_prefix(loss_dict, "val")
         
@@ -38,7 +38,7 @@ class ReconstructModel(pl.LightningModule):
         return loss_dict["loss/total"]
 
     def test_step(self, batch, batch_idx):
-        loss_dict, _ = self.common_step(batch)
+        loss_dict = self.common_step(batch)
 
         self.log_dict_prefix(loss_dict, "test")
 

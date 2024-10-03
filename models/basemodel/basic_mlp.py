@@ -48,4 +48,4 @@ class basicMLP(nn.Module):
         x = F.relu(x)
 
         output = self.output(x)
-        return output
+        return output.transpose(-2, -1)
