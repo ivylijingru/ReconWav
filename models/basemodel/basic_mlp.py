@@ -49,3 +49,14 @@ class basicMLP(nn.Module):
 
         output = self.output(x)
         return output.transpose(-2, -1)
+
+
+if __name__ == "__main__":
+    input_dim = 128
+    hidden_dim = 512
+    output_dim = 80
+    target_seq_len = 344
+
+    model = basicMLP(input_dim, hidden_dim, output_dim, target_seq_len)
+    x = torch.zeros(16, 4, 128)
+    print(model(x).shape)

@@ -37,4 +37,6 @@ def train(config):
 
 
 if __name__ == "__main__":
-    train("config/recon_mlp.json")
+    import fire
+
+    fire.Fire(train)

@@ -17,7 +17,7 @@ class ReconstructModel(pl.LightningModule):
         self.save_hyperparameters()
 
         self.optim_cfg = configs["optim"]
-        self.model = get_base_model(configs["mlp"])
+        self.model = get_base_model(configs["conv"])
         self.loss_fn = get_loss_fn()
         self.example_batch = None
 
@@ -45,8 +45,9 @@ class ReconstructModel(pl.LightningModule):
 
     def on_validation_epoch_end(self):
         if self.example_batch is not None:
-            self.log_image(self.example_batch["mel"][0], "gt")
-            self.log_image(self.example_batch["mel_pred"][0], "pred")
+            for i in range(self.example_batch["mel"].shape[0]):
+                self.log_image(self.example_batch["mel"][i], "gt")
+                self.log_image(self.example_batch["mel_pred"][i], "pred")
 
     def test_step(self, batch, batch_idx):
         loss_dict, _ = self.common_step(batch)
@@ -108,3 +109,14 @@ class ReconstructModel(pl.LightningModule):
                 scheduler=scheduler,
                 monitor=scheduler_cfg["monitor"],
             ))
+
+    def on_after_backward(self):
+        # 在 backward 之后调用，用于监控梯度
+        for name, param in self.named_parameters():
+            if param.grad is not None:
+                grad_mean = param.grad.mean()
+                grad_max = param.grad.max()
+                grad_min = param.grad.min()
+                self.log(f'grad_mean/{name}', grad_mean)
+                self.log(f'grad_max/{name}', grad_max)
+                self.log(f'grad_min/{name}', grad_min)
