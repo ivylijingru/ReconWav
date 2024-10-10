@@ -33,11 +33,11 @@ class basicConv(nn.Module):
         padding = 0      # 可以根据需求调整
         output_padding = 0 # 当需要精准控制输出尺寸时，可以设置
 
-        stride1 = 2      # 可以根据需求调整
+        stride1 = 1      # 可以根据需求调整
         self.deconv1 = nn.ConvTranspose1d(
             in_channels=input_dim, 
             out_channels=output_dim, 
-            kernel_size=2 * stride1, 
+            kernel_size=45 * stride1, 
             stride=stride1, 
             padding=padding, 
             output_padding=output_padding
@@ -45,37 +45,9 @@ class basicConv(nn.Module):
         self.batch_norm1 = nn.BatchNorm1d(output_dim)
         self.activation1 = nn.ReLU()
 
-        stride2 = 4
-        self.deconv2 = nn.ConvTranspose1d(
-            in_channels=output_dim, 
-            out_channels=output_dim, 
-            kernel_size=2 * stride2, 
-            stride=stride2, 
-            padding=1, 
-            output_padding=output_padding
-        )
-        self.batch_norm2 = nn.BatchNorm1d(output_dim)
-        self.activation2 = nn.ReLU()
-
-        stride3 = 8
-        self.deconv3 = nn.ConvTranspose1d(
-            in_channels=output_dim, 
-            out_channels=output_dim, 
-            kernel_size=2 * stride3, 
-            stride=stride3, 
-            padding=0, 
-            output_padding=output_padding
-        )
-        self.batch_norm3 = nn.BatchNorm1d(output_dim)
-        self.activation3 = nn.ReLU()
-
     def forward(self, x):
-        x = x.transpose(-2, -1) # [batch_size, shape_latent, seq_len_latent]
-
-        x = self.activation1(self.batch_norm1(self.deconv1(x)))
-        x = self.activation2(self.batch_norm2(self.deconv2(x)))
-        output = self.activation3(self.batch_norm3(self.deconv3(x)))
-
+        # [batch_size, shape_latent, seq_len_latent]
+        output = self.activation1(self.batch_norm1(self.deconv1(x)))
         return output # [batch_size, shape_latent, seq_len_target]
 
 
@@ -85,5 +57,5 @@ if __name__ == "__main__":
     target_seq_len = 344
 
     model = basicConv(input_dim, output_dim, target_seq_len)
-    x = torch.zeros(16, 4, 128)
+    x = torch.zeros(16, 128, 300)
     print(model(x).shape)
