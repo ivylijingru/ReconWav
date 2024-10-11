@@ -14,10 +14,61 @@ Alternative:
 
 TODO: WIP; will first implement a shorter version of things
 """
+import typing as tp
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+from .conv import (
+    SConv1d,
+    SConvTranspose1d
+)
+
+
+class SEANetResnetBlock(nn.Module):
+    """Residual block from SEANet model.
+    Args:
+        dim (int): Dimension of the input/output
+        kernel_sizes (list): List of kernel sizes for the convolutions.
+        dilations (list): List of dilations for the convolutions.
+        activation (str): Activation function.
+        activation_params (dict): Parameters to provide to the activation function
+        norm (str): Normalization method.
+        norm_params (dict): Parameters to provide to the underlying normalization used along with the convolution.
+        causal (bool): Whether to use fully causal convolution.
+        pad_mode (str): Padding mode for the convolutions.
+        compress (int): Reduced dimensionality in residual branches (from Demucs v3)
+        true_skip (bool): Whether to use true skip connection or a simple convolution as the skip connection.
+    """
+    def __init__(self, dim: int, kernel_sizes: tp.List[int] = [3, 1], dilations: tp.List[int] = [1, 1],
+                 activation: str = 'ELU', activation_params: dict = {'alpha': 1.0},
+                 norm: str = 'weight_norm', norm_params: tp.Dict[str, tp.Any] = {}, causal: bool = False,
+                 pad_mode: str = 'reflect', compress: int = 2, true_skip: bool = True):
+        super().__init__()
+        assert len(kernel_sizes) == len(dilations), 'Number of kernel sizes should match number of dilations'
+        act = getattr(nn, activation)
+        hidden = dim // compress
+        block = []
+        for i, (kernel_size, dilation) in enumerate(zip(kernel_sizes, dilations)):
+            in_chs = dim if i == 0 else hidden
+            out_chs = dim if i == len(kernel_sizes) - 1 else hidden
+            block += [
+                act(**activation_params),
+                SConv1d(in_chs, out_chs, kernel_size=kernel_size, dilation=dilation,
+                        norm=norm, norm_kwargs=norm_params,
+                        causal=causal, pad_mode=pad_mode),
+            ]
+        self.block = nn.Sequential(*block)
+        self.shortcut: nn.Module
+        if true_skip:
+            self.shortcut = nn.Identity()
+        else:
+            self.shortcut = SConv1d(dim, dim, kernel_size=1, norm=norm, norm_kwargs=norm_params,
+                                    causal=causal, pad_mode=pad_mode)
+
+    def forward(self, x):
+        return self.shortcut(x) + self.block(x)
 
 
 class basicConv(nn.Module):
@@ -45,9 +96,27 @@ class basicConv(nn.Module):
         self.batch_norm1 = nn.BatchNorm1d(output_dim)
         self.activation1 = nn.ReLU()
 
+        activation: str = 'ELU'
+        activation_params: dict = {'alpha': 1.0}
+        norm: str = 'weight_norm'
+        norm_params: tp.Dict[str, tp.Any] = {}
+        residual_kernel_size: int = 3
+        dilation_base: int = 2
+        causal: bool = False
+        pad_mode: str = 'constant'
+        true_skip: bool = False
+        compress: int = 2
+
+        self.res_block = SEANetResnetBlock(80, kernel_sizes=[residual_kernel_size, 1],
+                                      dilations=[dilation_base ** 1, 1],
+                                      activation=activation, activation_params=activation_params,
+                                      norm=norm, norm_params=norm_params, causal=causal,
+                                      pad_mode=pad_mode, compress=compress, true_skip=true_skip)
+
     def forward(self, x):
         # [batch_size, shape_latent, seq_len_latent]
         output = self.activation1(self.batch_norm1(self.deconv1(x)))
+        output = self.res_block(output)
         return output # [batch_size, shape_latent, seq_len_target]
 
 

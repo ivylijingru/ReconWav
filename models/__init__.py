@@ -39,7 +39,7 @@ class ReconstructModel(pl.LightningModule):
     def validation_step(self, batch, batch_idx) -> Any:
         loss_dict, mel_output = self.common_step(batch)
     
-        if self.example_batch is None and batch_idx == 0:
+        if batch_idx == 0:
             self.example_batch = batch
             self.example_batch["mel_pred"] = mel_output
         self.log_dict_prefix(loss_dict, "val")
@@ -49,10 +49,11 @@ class ReconstructModel(pl.LightningModule):
         return loss_dict["loss/total"]
 
     def on_validation_epoch_end(self):
+        # TODO: there is bug here; needs debugging
         if self.example_batch is not None:
-            for i in range(self.example_batch["mel"].shape[0]):
-                self.log_image(self.example_batch["mel"][i], "gt")
-                self.log_image(self.example_batch["mel_pred"][i], "pred")
+            for i in range(self.example_batch["mel"].shape[0] // 8):
+                self.log_image(self.example_batch["mel"][i], "gt_{}".format(i))
+                self.log_image(self.example_batch["mel_pred"][i], "pred_{}".format(i))
 
     def test_step(self, batch, batch_idx):
         loss_dict, _ = self.common_step(batch)
