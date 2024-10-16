@@ -80,6 +80,15 @@ class ReconstructModel(pl.LightningModule):
 
         # TODO: potentially log mel spectrogram here
         return loss_dict, model_output
+    
+    def inference_step(self, audio):
+        loss_dict = dict()
+
+        with torch.no_grad():
+            encodec = self.encodec_model(audio)
+        model_output = self.model(encodec)
+
+        return model_output
 
     def log_dict_prefix(self, d, prefix):
         for k, v in d.items():
