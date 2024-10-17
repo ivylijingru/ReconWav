@@ -20,7 +20,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from conv import (
+from .conv import (
     SConv1d,
     NormConvTranspose1d
 )
