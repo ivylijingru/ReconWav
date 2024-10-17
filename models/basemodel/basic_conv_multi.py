@@ -20,7 +20,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .conv import (
+from conv import (
     SConv1d,
     NormConvTranspose1d
 )
@@ -99,44 +99,64 @@ class basicConv(nn.Module):
 
         self.deconv1 = NormConvTranspose1d(
             in_channels=input_dim, 
-            out_channels=output_dim, 
-            kernel_size=23 * stride1, 
+            out_channels=input_dim, 
+            kernel_size=15 * stride1, 
             stride=stride1, 
             padding=padding, 
             output_padding=output_padding,
             norm = norm,
         )
 
-        self.res_block1 = SEANetResnetBlock(output_dim, kernel_sizes=[residual_kernel_size, 1],
+        self.res_block1 = SEANetResnetBlock(input_dim, kernel_sizes=[residual_kernel_size, 1],
                                       dilations=[dilation_base ** 1, 1],
                                       activation=activation, activation_params=activation_params,
                                       norm=norm, norm_params=norm_params, causal=causal,
                                       pad_mode=pad_mode, compress=compress, true_skip=true_skip)
 
         self.deconv2 = NormConvTranspose1d(
-            in_channels=output_dim, 
-            out_channels=output_dim, 
-            kernel_size=23 * stride1, 
+            in_channels=input_dim, 
+            out_channels=input_dim, 
+            kernel_size=16 * stride1, 
             stride=stride1, 
             padding=padding, 
             output_padding=output_padding,
             norm = norm,
         )
 
-        self.res_block2 = SEANetResnetBlock(output_dim, kernel_sizes=[residual_kernel_size, 1],
+        self.res_block2 = SEANetResnetBlock(input_dim, kernel_sizes=[residual_kernel_size, 1],
                                       dilations=[dilation_base ** 1, 1],
                                       activation=activation, activation_params=activation_params,
                                       norm=norm, norm_params=norm_params, causal=causal,
                                       pad_mode=pad_mode, compress=compress, true_skip=true_skip)
-        self.activation = nn.ELU()
+        self.activation1 = nn.ELU()
+
+        self.deconv3 = NormConvTranspose1d(
+            in_channels=input_dim, 
+            out_channels=output_dim, 
+            kernel_size=16 * stride1, 
+            stride=stride1, 
+            padding=padding, 
+            output_padding=output_padding,
+            norm = norm,
+        )
+
+        self.res_block3 = SEANetResnetBlock(output_dim, kernel_sizes=[residual_kernel_size, 1],
+                                      dilations=[dilation_base ** 1, 1],
+                                      activation=activation, activation_params=activation_params,
+                                      norm=norm, norm_params=norm_params, causal=causal,
+                                      pad_mode=pad_mode, compress=compress, true_skip=true_skip)
+        self.activation2 = nn.ELU()
 
     def forward(self, x):
         # [batch_size, shape_latent, seq_len_latent]
         output = self.deconv1(x)
         output = self.res_block1(output)
-        output = self.activation(output)
+        output = self.activation1(output)
         output = self.deconv2(output)
         output = self.res_block2(output)
+        output = self.activation2(output)
+        output = self.deconv3(output)
+        output = self.res_block3(output)
         return output # [batch_size, shape_latent, seq_len_target]
 
 
