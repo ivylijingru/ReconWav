@@ -11,6 +11,7 @@ import torchaudio
 import soundfile as sf
 from torchmetrics.audio.pesq import PerceptualEvaluationSpeechQuality
 from hifigan.models import Generator
+import torchaudio.transforms as T
 
 # 保存音频数据为 .wav 文件
 # sf.write("output.wav", audio_data, sample_rate)
@@ -78,6 +79,10 @@ if __name__ == "__main__":
 
     mel_module.h = h
 
+    pesq_encodec = []
+    pesq_hifigan = []
+    pesq_recon = []
+
     cnt = 0
     for audio_file in os.listdir(valid_audio_dir):
         filename = os.path.join(valid_audio_dir, audio_file)
@@ -99,8 +104,8 @@ if __name__ == "__main__":
         pesq = PerceptualEvaluationSpeechQuality(PESQ_SR, "wb")
         origin_wav = resample_wave(wav_encodec.squeeze(0), original_rate=ENCODEC_SR, target_rate=PESQ_SR)
         encodec_wav = resample_wave(encodec_sanity_audio.unsqueeze(0), original_rate=ENCODEC_SR, target_rate=PESQ_SR)
-        sf.write(f"origin_{cnt}.wav", origin_wav.squeeze().numpy(), PESQ_SR)
-        sf.write(f"encodec_{cnt}.wav", encodec_wav.squeeze().numpy(), PESQ_SR)
+        # sf.write(f"origin_{cnt}.wav", origin_wav.squeeze().numpy(), PESQ_SR)
+        # sf.write(f"encodec_{cnt}.wav", encodec_wav.squeeze().numpy(), PESQ_SR)
         try:
             pesq_score_encodec = pesq(encodec_wav, origin_wav).item()
         except Exception as e:
@@ -108,6 +113,8 @@ if __name__ == "__main__":
             pesq_score_encodec = -1
 
         print("PESQ Score -- Encodec sanity check: ", pesq_score_encodec)
+        if pesq_score_encodec != -1:
+            pesq_encodec.append(pesq_score_encodec)
 
         wav, sr = load_wav(filename)
         number_of_samples = round(len(wav) * float(HIFIGAN_SR) / sr)
@@ -134,21 +141,34 @@ if __name__ == "__main__":
             pesq_score_hifigan = -1
 
         print("PESQ Score -- HIFI GAN: ", pesq_score_hifigan)
-        sf.write(f"hifigan_{cnt}.wav", encodec_wav.squeeze().numpy(), PESQ_SR)
+        if pesq_score_hifigan != -1:
+            pesq_hifigan.append(pesq_score_hifigan)
+        # sf.write(f"hifigan_{cnt}.wav", encodec_wav.squeeze().numpy(), PESQ_SR)
 
         # Reconstruct model
         from models import ReconstructModel
         checkpoint_path = "/home/jli3268/ReconWav/work_dir_encodec/weight_v6/epoch=29-val_loss-total=0.917.ckpt"
         model = ReconstructModel.load_from_checkpoint(checkpoint_path)
 
-        wav, sr = load_wav(filename)
-        number_of_samples = round(len(wav) * float(ENCODEC_SR) / sr) # resample to encodec sample rate (24000)
-        wav = sps.resample(wav, number_of_samples)
-        # wav = wav / MAX_WAV_VALUE
-        wav_batch = torch.from_numpy(wav).float().unsqueeze(0).unsqueeze(0)
-        wav = torch.FloatTensor(wav)
+        def load_audio(audio_path):
+            """Load audio file and convert to mono if necessary."""
+            audio, sampling_rate = sf.read(audio_path)
+            if len(audio.shape) > 1:
+                audio = audio.mean(axis=1)
+            return torch.from_numpy(audio).float(), sampling_rate
 
-        mel_output = model.inference_step(wav_batch)
+        def resample_audio(audio_array, original_rate, target_rate):
+            """Resample audio to the target sampling rate."""
+            if original_rate != target_rate:
+                resampler = T.Resample(original_rate, target_rate)
+                return resampler(audio_array)
+            return audio_array
+
+        audio_torch, sr = load_audio(filename)
+        audio_resampled = resample_audio(audio_torch, sr, ENCODEC_SR)
+        audio_resampled = audio_resampled.unsqueeze(0).unsqueeze(0)
+
+        mel_output = model.inference_step(audio_resampled)
 
         with torch.no_grad():
             y_g_hat = generator(mel_output)
@@ -167,9 +187,39 @@ if __name__ == "__main__":
             print("An unexpected error occurred:", e)
             pesq_score_recon = -1
 
-        print("PESQ Score -- Reconstructed: ", pesq_score_recon)
-        sf.write(f"recon_{cnt}.wav", recon_audio.squeeze().numpy(), PESQ_SR)
+        print("PESQ Score -- Reconstructed diff: ", pesq_score_recon)
+        if pesq_score_recon != -1:
+            pesq_recon.append(pesq_score_recon)
+        # sf.write(f"recon_diff_{cnt}.wav", recon_audio.squeeze().numpy(), PESQ_SR)
+        # cnt += 1
+        # if cnt == 10:
+        #     break
 
-        cnt += 1
-        if cnt == 10:
-            break
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    # 计算每种 PESQ 评分的平均值、最小值和最大值
+    mean_values = [np.mean(pesq_encodec), np.mean(pesq_hifigan), np.mean(pesq_recon)]
+    min_values = [min(pesq_encodec), min(pesq_hifigan), min(pesq_recon)]
+    max_values = [max(pesq_encodec), max(pesq_hifigan), max(pesq_recon)]
+
+    # 计算误差范围
+    yerr = [ [mean - min_val for mean, min_val in zip(mean_values, min_values)],  # 下误差
+            [max_val - mean for mean, max_val in zip(mean_values, max_values)] ]  # 上误差
+
+    # 绘制误差棒图
+    labels = ['Encodec', 'HiFi GAN', 'Reconstructed']
+    x = np.arange(len(labels))
+
+    fig, ax = plt.subplots()
+    ax.errorbar(x, mean_values, yerr=yerr, fmt='o', capsize=5, color='royalblue', ecolor='gray', elinewidth=2, markeredgewidth=2)
+
+    # 添加标签和标题
+    ax.set_xlabel('PESQ Type')
+    ax.set_ylabel('PESQ Score')
+    ax.set_title('PESQ Scores with Min and Max Error Bars')
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+
+    # 保存图表
+    plt.savefig("pesq_scores_error_bars_tmux.png", format="png", dpi=300, bbox_inches="tight")
