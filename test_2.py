@@ -77,7 +77,8 @@ if __name__ == "__main__":
     valid_audio_dir = "../nsynth-valid/audio"
 
     # For hifigan
-    config_file = "../hifigan/checkpoint/config.json"
+    # config_file = "../hifigan/checkpoint/config.json"
+    config_file = "UNIVERSAL_V1/config.json"
     with open(config_file) as f:
         data = f.read()
 
@@ -87,7 +88,8 @@ if __name__ == "__main__":
 
     generator = Generator(h).to(device)
 
-    checkpoint_file = "../hifigan/checkpoint/generator_v1"
+    # checkpoint_file = "../hifigan/checkpoint/generator_v1"
+    checkpoint_file = "UNIVERSAL_V1/g_02500000"
     state_dict_g = load_checkpoint(checkpoint_file, device)
     generator.load_state_dict(state_dict_g['generator'])
 
@@ -99,7 +101,24 @@ if __name__ == "__main__":
 
     mel_module.h = h
 
+    cnt = 0
+
     start_time = time()
+
+    output_dir = "samples-new-hifi"
+    encodec_output_dir = os.path.join(output_dir, "encodec")
+    hifigan_output_dir = os.path.join(output_dir, "hifigan")
+    recon_output_dir = os.path.join(output_dir, "recon")
+
+    def create_if_not_exist(filepath):
+        if not os.path.exists(filepath):
+            os.makedirs(filepath)
+    
+    create_if_not_exist(output_dir)
+    create_if_not_exist(encodec_output_dir)
+    create_if_not_exist(hifigan_output_dir)
+    create_if_not_exist(recon_output_dir)
+
     for audio_file in tqdm(os.listdir(valid_audio_dir)):
         filename = os.path.join(valid_audio_dir, audio_file)
 
@@ -110,7 +129,7 @@ if __name__ == "__main__":
         encodec_arr = torch.from_numpy(np.load(encodec_path)).unsqueeze(0)
         output = decoder(encodec_arr)
         encodec_sanity_audio = output.detach().squeeze().cpu()
-        sf.write(f"samples/encodec/{part_name}.wav", encodec_sanity_audio.squeeze().numpy(), ENCODEC_SR)
+        sf.write(os.path.join(encodec_output_dir, f"{part_name}.wav"), encodec_sanity_audio.squeeze().numpy(), ENCODEC_SR)
 
         wav, sr = load_wav(filename)
         number_of_samples = round(len(wav) * float(HIFIGAN_SR) / sr)
@@ -126,7 +145,7 @@ if __name__ == "__main__":
             # hifi_audio = hifi_audio * MAX_WAV_VALUE
             hifi_audio = hifi_audio.cpu().unsqueeze(0)
 
-        sf.write(f"samples/hifigan/{part_name}.wav", hifi_audio.squeeze().numpy(), HIFIGAN_SR)
+        sf.write(os.path.join(hifigan_output_dir, f"{part_name}.wav"), hifi_audio.squeeze().numpy(), HIFIGAN_SR)
 
         # audio_torch, sr = load_audio(filename)
         # audio_resampled = resample_audio(audio_torch, sr, ENCODEC_SR)
@@ -143,7 +162,7 @@ if __name__ == "__main__":
             recon_audio = y_g_hat.squeeze()
             recon_audio = recon_audio.cpu()
 
-        sf.write(f"samples/recon/{part_name}.wav", recon_audio.squeeze().numpy(), HIFIGAN_SR)
+        sf.write(os.path.join(recon_output_dir, f"{part_name}.wav"), recon_audio.squeeze().numpy(), HIFIGAN_SR)
 
     end_time = time()
     print(end_time - start_time)

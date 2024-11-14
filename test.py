@@ -143,7 +143,7 @@ if __name__ == "__main__":
         print("PESQ Score -- HIFI GAN: ", pesq_score_hifigan)
         if pesq_score_hifigan != -1:
             pesq_hifigan.append(pesq_score_hifigan)
-        # sf.write(f"hifigan_{cnt}.wav", encodec_wav.squeeze().numpy(), PESQ_SR)
+        sf.write(f"hifigan_{cnt}.wav", encodec_wav.squeeze().numpy(), PESQ_SR)
 
         # Reconstruct model
         from models import ReconstructModel
@@ -190,10 +190,10 @@ if __name__ == "__main__":
         print("PESQ Score -- Reconstructed diff: ", pesq_score_recon)
         if pesq_score_recon != -1:
             pesq_recon.append(pesq_score_recon)
-        # sf.write(f"recon_diff_{cnt}.wav", recon_audio.squeeze().numpy(), PESQ_SR)
-        # cnt += 1
-        # if cnt == 10:
-        #     break
+        sf.write(f"recon_diff_{cnt}.wav", recon_audio.squeeze().numpy(), PESQ_SR)
+        cnt += 1
+        if cnt == 10:
+            break
 
     import numpy as np
     import matplotlib.pyplot as plt

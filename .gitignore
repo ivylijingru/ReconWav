@@ -1,5 +1,9 @@
 *.npy
 *.pyc
+*.wav
 
 work_dir_vgg/
 work_dir_encodec/
+samples/
+.ipynb_checkpoints/
+*.png
