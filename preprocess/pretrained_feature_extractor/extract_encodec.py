@@ -71,8 +71,8 @@ def batch_extract_encodec(file_paths, output_folder, encoder, batch_size=64):
 #     unittest.main()
 
 if __name__ == "__main__":
-    input_folder = "/home/jli3268/nsynth-valid/audio"
-    output_folder = "../encodec_feature"
+    input_folder = "/home/jli3268/nsynth-train/audio"
+    output_folder = "../encodec_feature_train"
     file_paths = [os.path.join(input_folder, f) for f in os.listdir(input_folder) if f.endswith(('.wav', '.mp3'))]
 
     # 调用 batch_extract_encodec 处理文件

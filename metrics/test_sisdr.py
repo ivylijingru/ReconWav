@@ -46,6 +46,10 @@ def plot_avg_SI_SDR_scores(results, save_path="avg_SISDR_scores_error_bars.png")
     min_values = [results["encodec"]["min"], results["hifigan"]["min"], results["recon"]["min"], results["recon-hifigan"]["min"]]
     max_values = [results["encodec"]["max"], results["hifigan"]["max"], results["recon"]["max"], results["recon-hifigan"]["max"]]
 
+    print("encodec mean:", results["encodec"]["mean"])
+    print("hifigan mean:", results["hifigan"]["mean"])
+    print("bigvgan mean:", results["recon"]["mean"])
+
     # 计算误差范围
     yerr = [
         [mean - min_val for mean, min_val in zip(mean_values, min_values)],  # 下误差
@@ -53,7 +57,7 @@ def plot_avg_SI_SDR_scores(results, save_path="avg_SISDR_scores_error_bars.png")
     ]
 
     # 绘制误差棒图
-    labels = ['Encodec', 'HiFi GAN', 'Reconstructed', 'Recon-Hifi']
+    labels = ['Encodec', 'HiFi GAN', 'BIGVGAN', 'Recon-Hifi']
     x = np.arange(len(labels))
 
     fig, ax = plt.subplots()
@@ -193,7 +197,8 @@ if __name__ == "__main__":
     ref_dir = "../../nsynth-valid/audio/"
     encodec_dir = "../samples-new-hifi/encodec"
     hifigan_dir = "../samples-new-hifi/hifigan"
-    recon_dir = "../samples-new-hifi/recon"
+    bigvgan_dir = "/home/jli3268/BigVGAN/output_folder"
+    # recon_dir = "../samples-new-hifi/recon"
 
-    result = evaluate_audio_quality(ref_dir, encodec_dir, hifigan_dir, recon_dir)
-    plot_avg_SI_SDR_scores(result, save_path="avg_SISDR_scores_error_bars--new-hifi.png")
+    result = evaluate_audio_quality(ref_dir, encodec_dir, hifigan_dir, bigvgan_dir)
+    plot_avg_SI_SDR_scores(result, save_path="avg_SISDR_scores_error_bars--bigvgan.png")

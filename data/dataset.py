@@ -6,6 +6,9 @@ import torchaudio.transforms as T
 
 import torch
 import torch.utils.data as Data
+from transformers import Wav2Vec2FeatureExtractor
+import soundfile as sf
+import torchaudio.transforms as T
 
 
 def load_audio(audio_path):
@@ -41,6 +44,8 @@ class ReconstrcutDataset(Data.Dataset):
 
         self.audio_seq_len = 16000 * input_sec
         self.encodec_sr = 24000
+        self.processor = Wav2Vec2FeatureExtractor.from_pretrained("m-a-p/MERT-v0-public",trust_remote_code=True)
+        self.manifest_path = manifest_path
 
     def __len__(self):
         return len(self.data)
@@ -51,19 +56,50 @@ class ReconstrcutDataset(Data.Dataset):
         vgg
         """
         output_data = dict()
-        mel = torch.from_numpy(np.load(os.path.join("preprocess", self.data[idx]["mel_path"]))).float()
-        output_data["mel"] = torch.zeros(mel.shape[0], self.target_seq_len)
-        if mel.shape[1] < self.target_seq_len:
-            output_data["mel"][:, :mel.shape[1]] = mel
-        elif mel.shape[1] >= self.target_seq_len:
-            output_data["mel"] = mel[:, :self.target_seq_len]
-
+        # load audio
         audio_path = os.path.join("preprocess", self.data[idx]["wav_path"])
-        audio_torch, sr = load_audio(audio_path)
-        audio_resampled = resample_audio(audio_torch, sr, self.encodec_sr)
+        audio, sampling_rate = sf.read(audio_path)
 
-        audio_resampled = audio_resampled.unsqueeze(0)
-        output_data["audio"] = audio_resampled
+        # convert to mono
+        if len(audio.shape) > 1:
+            audio = audio.mean(axis=1)
+        audio_array = torch.from_numpy(audio).float()
+
+        # resample
+        resample_rate = self.processor.sampling_rate
+        if resample_rate != sampling_rate:
+            resampler = T.Resample(sampling_rate, resample_rate)
+        else:
+            resampler = None
+        if resampler is None:
+            input_audio = audio_array
+        else:
+            input_audio = resampler(audio_array)
+        
+        # process and extract embeddings
+        inputs = self.processor(input_audio, sampling_rate=resample_rate, return_tensors="pt")
+        
+        for input_key in inputs.keys():
+            inputs[input_key] = inputs[input_key].squeeze(0)
+
+        output_data["inputs"] = inputs
+
+        if "train" in self.manifest_path:
+            output_folder = "preprocess/encodec_feature_train"
+        else:
+            output_folder = "preprocess/encodec_feature_valid"
+        part_name = os.path.splitext(os.path.basename(audio_path))[0]
+        encodec_path = os.path.join(output_folder, f"{part_name}_encodec.npy")
+        encodec = torch.from_numpy(np.load(encodec_path))
+        output_data["encodec"] = encodec
+
+        # output_data = dict()
+        # mel = torch.from_numpy(np.load(os.path.join("preprocess", self.data[idx]["mel_path"]))).float()
+        # output_data["mel"] = torch.zeros(mel.shape[0], self.target_seq_len)
+        # if mel.shape[1] < self.target_seq_len:
+        #     output_data["mel"][:, :mel.shape[1]] = mel
+        # elif mel.shape[1] >= self.target_seq_len:
+        #     output_data["mel"] = mel[:, :self.target_seq_len]
 
         # if encodec_feat.shape[2] < self.encodec_seq_len:
         #     output_data["audio"][:, :, :encodec_feat.shape[2]] = encodec_feat

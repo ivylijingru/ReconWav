@@ -6,7 +6,8 @@ import pytorch_lightning as pl
 import matplotlib.pyplot as plt
 import numpy as np
 
-from encodec import EncodecModel
+from transformers import AutoModel
+
 from .basemodel import get_base_model
 from .loss_fn import get_loss_fn
 
@@ -22,9 +23,13 @@ class ReconstructModel(pl.LightningModule):
         self.loss_fn = get_loss_fn()
         self.example_batch = None
 
-        self.encodec_frame_rate = 75
-        self.encodec_model = EncodecModel.encodec_model_24khz(pretrained=True).encoder
-        self.encodec_model.eval()
+        self.mert_model = AutoModel.from_pretrained("m-a-p/MERT-v0-public", trust_remote_code=True)
+        self.mert_model.eval()
+
+    def on_train_epoch_start(self):
+        self.mert_model.config.mask_time_prob = 0.0
+        for param in self.mert_model.parameters():
+            param.requires_grad = False
 
     def training_step(self, batch, batch_idx) -> Any:
         loss_dict, _ = self.common_step(batch)
@@ -48,12 +53,12 @@ class ReconstructModel(pl.LightningModule):
 
         return loss_dict["loss/total"]
 
-    def on_validation_epoch_end(self):
-        # TODO: there is bug here; needs debugging
-        if self.example_batch is not None:
-            for i in range(self.example_batch["mel"].shape[0] // 8):
-                self.log_image(self.example_batch["mel"][i], "gt_{}".format(i))
-                self.log_image(self.example_batch["mel_pred"][i], "pred_{}".format(i))
+    # def on_validation_epoch_end(self):
+    #     # TODO: there is bug here; needs debugging
+    #     if self.example_batch is not None:
+    #         for i in range(self.example_batch["mel"].shape[0] // 8):
+    #             self.log_image(self.example_batch["mel"][i], "gt_{}".format(i))
+    #             self.log_image(self.example_batch["mel_pred"][i], "pred_{}".format(i))
 
     def test_step(self, batch, batch_idx):
         loss_dict, _ = self.common_step(batch)
@@ -63,15 +68,19 @@ class ReconstructModel(pl.LightningModule):
         # self.test_metrics.update(logits, torch.round(batch["y"]), batch["y_mask"])
 
     def common_step(self, batch):
-        audio = batch["audio"]
-        mel = batch["mel"]
+        inputs = batch["inputs"]
+        encodec = batch["encodec"]
         
         loss_dict = dict()
 
         with torch.no_grad():
-            encodec = self.encodec_model(audio)
-        model_output = self.model(encodec)
-        loss_dict = self.loss_fn(model_output, mel)
+            outputs = self.mert_model(**inputs, output_hidden_states=True)
+        model_output = outputs.hidden_states[-1]
+        model_output = model_output.transpose(-1, -2)
+        # print(model_output.shape)
+        # print(encodec.shape)
+        model_output = self.model(model_output)
+        loss_dict = self.loss_fn(model_output, encodec)
 
         total_loss = 0
         for loss_key in loss_dict.keys():

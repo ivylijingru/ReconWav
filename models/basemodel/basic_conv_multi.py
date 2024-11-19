@@ -100,7 +100,7 @@ class basicConv(nn.Module):
         self.deconv1 = NormConvTranspose1d(
             in_channels=input_dim, 
             out_channels=input_dim, 
-            kernel_size=15 * stride1, 
+            kernel_size=34 * stride1, 
             stride=stride1, 
             padding=padding, 
             output_padding=output_padding,
@@ -116,7 +116,7 @@ class basicConv(nn.Module):
         self.deconv2 = NormConvTranspose1d(
             in_channels=input_dim, 
             out_channels=input_dim, 
-            kernel_size=16 * stride1, 
+            kernel_size=35 * stride1, 
             stride=stride1, 
             padding=padding, 
             output_padding=output_padding,
@@ -133,7 +133,7 @@ class basicConv(nn.Module):
         self.deconv3 = NormConvTranspose1d(
             in_channels=input_dim, 
             out_channels=output_dim, 
-            kernel_size=16 * stride1, 
+            kernel_size=35 * stride1, 
             stride=stride1, 
             padding=padding, 
             output_padding=output_padding,
@@ -161,10 +161,11 @@ class basicConv(nn.Module):
 
 
 if __name__ == "__main__":
-    input_dim = 128
-    output_dim = 80
-    target_seq_len = 344
+    input_dim = 768
+    output_dim = 128
+    target_seq_len = 300
 
     model = basicConv(input_dim, output_dim, target_seq_len)
-    x = torch.zeros(16, 128, 300)
+    x = torch.zeros(16, 768, 199)
+    # 128 * 300
     print(model(x).shape)
