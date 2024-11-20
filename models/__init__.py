@@ -69,7 +69,7 @@ class ReconstructModel(pl.LightningModule):
 
     def common_step(self, batch):
         inputs = batch["inputs"]
-        encodec = batch["encodec"]
+        mel = batch["mel"]
         
         loss_dict = dict()
 
@@ -80,7 +80,7 @@ class ReconstructModel(pl.LightningModule):
         # print(model_output.shape)
         # print(encodec.shape)
         model_output = self.model(model_output)
-        loss_dict = self.loss_fn(model_output, encodec)
+        loss_dict = self.loss_fn(model_output, mel)
 
         total_loss = 0
         for loss_key in loss_dict.keys():

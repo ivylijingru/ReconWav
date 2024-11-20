@@ -39,7 +39,7 @@ class ReconstrcutDataset(Data.Dataset):
         with open(manifest_path) as f:
             self.data = [json.loads(line) for line in f]
 
-        self.target_seq_len = mel_frame_rate * input_sec
+        self.target_seq_len = int(mel_frame_rate * input_sec)
         self.input_sec = input_sec
 
         self.audio_seq_len = 16000 * input_sec
@@ -84,30 +84,12 @@ class ReconstrcutDataset(Data.Dataset):
 
         output_data["inputs"] = inputs
 
-        if "train" in self.manifest_path:
-            output_folder = "preprocess/encodec_feature_train"
-        else:
-            output_folder = "preprocess/encodec_feature_valid"
-        part_name = os.path.splitext(os.path.basename(audio_path))[0]
-        encodec_path = os.path.join(output_folder, f"{part_name}_encodec.npy")
-        encodec = torch.from_numpy(np.load(encodec_path))
-        output_data["encodec"] = encodec
-
-        # output_data = dict()
-        # mel = torch.from_numpy(np.load(os.path.join("preprocess", self.data[idx]["mel_path"]))).float()
-        # output_data["mel"] = torch.zeros(mel.shape[0], self.target_seq_len)
-        # if mel.shape[1] < self.target_seq_len:
-        #     output_data["mel"][:, :mel.shape[1]] = mel
-        # elif mel.shape[1] >= self.target_seq_len:
-        #     output_data["mel"] = mel[:, :self.target_seq_len]
-
-        # if encodec_feat.shape[2] < self.encodec_seq_len:
-        #     output_data["audio"][:, :, :encodec_feat.shape[2]] = encodec_feat
-        # elif encodec_feat.shape[2] >= self.encodec_seq_len:
-        #     output_data["audio"] = encodec_feat[:, :, :self.encodec_seq_len]
-        # output_data["audio"] = output_data["audio"].squeeze()
-
-        # print(output_data["encodec"].shape) [1, 128, 300]
+        mel = torch.from_numpy(np.load(os.path.join("preprocess", self.data[idx]["mel_path"]))).float()
+        output_data["mel"] = torch.zeros(mel.shape[0], self.target_seq_len)
+        if mel.shape[1] < self.target_seq_len:
+            output_data["mel"][:, :mel.shape[1]] = mel
+        elif mel.shape[1] >= self.target_seq_len:
+            output_data["mel"] = mel[:, :self.target_seq_len]
 
         return output_data
 

@@ -84,6 +84,7 @@ class basicConv(nn.Module):
         padding = 0      # 可以根据需求调整
         output_padding = 0 # 当需要精准控制输出尺寸时，可以设置
 
+        stride0 = 3
         stride1 = 1      # 可以根据需求调整
 
         activation: str = 'ELU'
@@ -100,8 +101,8 @@ class basicConv(nn.Module):
         self.deconv1 = NormConvTranspose1d(
             in_channels=input_dim, 
             out_channels=input_dim, 
-            kernel_size=34 * stride1, 
-            stride=stride1, 
+            kernel_size=19 * stride0, 
+            stride=stride0, 
             padding=padding, 
             output_padding=output_padding,
             norm = norm,
@@ -116,7 +117,7 @@ class basicConv(nn.Module):
         self.deconv2 = NormConvTranspose1d(
             in_channels=input_dim, 
             out_channels=input_dim, 
-            kernel_size=35 * stride1, 
+            kernel_size=20 * stride1, 
             stride=stride1, 
             padding=padding, 
             output_padding=output_padding,
@@ -133,7 +134,7 @@ class basicConv(nn.Module):
         self.deconv3 = NormConvTranspose1d(
             in_channels=input_dim, 
             out_channels=output_dim, 
-            kernel_size=35 * stride1, 
+            kernel_size=20 * stride1, 
             stride=stride1, 
             padding=padding, 
             output_padding=output_padding,
@@ -163,7 +164,7 @@ class basicConv(nn.Module):
 if __name__ == "__main__":
     input_dim = 768
     output_dim = 128
-    target_seq_len = 300
+    target_seq_len = 689
 
     model = basicConv(input_dim, output_dim, target_seq_len)
     x = torch.zeros(16, 768, 199)
