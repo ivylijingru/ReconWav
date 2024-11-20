@@ -36,7 +36,7 @@ class ReconstrcutDataset(Data.Dataset):
         with open(manifest_path) as f:
             self.data = [json.loads(line) for line in f]
 
-        self.target_seq_len = mel_frame_rate * input_sec
+        self.target_seq_len = int(mel_frame_rate * input_sec)
         self.input_sec = input_sec
 
         self.audio_seq_len = 16000 * input_sec

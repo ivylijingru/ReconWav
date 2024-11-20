@@ -4,6 +4,7 @@
 
 work_dir_vgg/
 work_dir_encodec/
+work_dir_mert/
 samples/
 .ipynb_checkpoints/
 *.png
