@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from transformers import AutoModel
+from transformers import Wav2Vec2FeatureExtractor
 
 from .basemodel import get_base_model
 from .loss_fn import get_loss_fn
@@ -90,16 +91,22 @@ class ReconstructModel(pl.LightningModule):
         # TODO: potentially log mel spectrogram here
         return loss_dict, model_output
     
-    def inference_step(self, audio, encodec_path=None):
-        loss_dict = dict()
+    def inference_step(self, audio):
+        # process and extract embeddings
+        # Assume that audio is already resampled
+        processor = Wav2Vec2FeatureExtractor.from_pretrained("m-a-p/MERT-v0-public",trust_remote_code=True)
+        resample_rate = processor.sampling_rate
+        inputs = processor(audio, sampling_rate=resample_rate, return_tensors="pt")
+        
+        for input_key in inputs.keys():
+            inputs[input_key] = inputs[input_key].squeeze(0).cuda()
 
-        if encodec_path == None:
-            with torch.no_grad():
-                encodec = self.encodec_model(audio)
-        else:
-            encodec = torch.from_numpy(np.load(encodec_path))
-            encodec = encodec.unsqueeze(0).cuda()
-        model_output = self.model(encodec)
+        with torch.no_grad():
+            outputs = self.mert_model(**inputs, output_hidden_states=True)
+        model_output = outputs.hidden_states[-1]
+        model_output = model_output.transpose(-1, -2)
+
+        model_output = self.model(model_output)
 
         return model_output
 
