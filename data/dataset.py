@@ -1,33 +1,13 @@
 import json
 import os
-import numpy as np
-import soundfile as sf
-import torchaudio.transforms as T
 
-import torch
 import torch.utils.data as Data
-from transformers import Wav2Vec2FeatureExtractor
-import soundfile as sf
-import torchaudio.transforms as T
+
+from data.data_utils import process_mert_format, preprocess_encodec_format
+from data.data_utils import preprocess_mel
 
 
-def load_audio(audio_path):
-    """Load audio file and convert to mono if necessary."""
-    audio, sampling_rate = sf.read(audio_path)
-    if len(audio.shape) > 1:
-        audio = audio.mean(axis=1)
-    return torch.from_numpy(audio).float(), sampling_rate
-
-
-def resample_audio(audio_array, original_rate, target_rate):
-    """Resample audio to the target sampling rate."""
-    if original_rate != target_rate:
-        resampler = T.Resample(original_rate, target_rate)
-        return resampler(audio_array)
-    return audio_array
-
-
-class ReconstrcutDataset(Data.Dataset):
+class ReconstrcutDatasetMERT(Data.Dataset):
     def __init__(
         self,
         manifest_path,
@@ -40,56 +20,62 @@ class ReconstrcutDataset(Data.Dataset):
             self.data = [json.loads(line) for line in f]
 
         self.target_seq_len = int(mel_frame_rate * input_sec)
-        self.input_sec = input_sec
-
-        self.audio_seq_len = 16000 * input_sec
-        self.encodec_sr = 24000
-        self.processor = Wav2Vec2FeatureExtractor.from_pretrained("m-a-p/MERT-v0-public",trust_remote_code=True)
         self.manifest_path = manifest_path
 
     def __len__(self):
         return len(self.data)
-    
+
     def __getitem__(self, idx):
         """
-        mel
-        vgg
+        Return:
+            output_data: dict
+                {
+                    "inputs": dict,
+                    "mel": torch.tensor
+                }
         """
         output_data = dict()
         # load audio
         audio_path = os.path.join("preprocess", self.data[idx]["wav_path"])
-        audio, sampling_rate = sf.read(audio_path)
+        mel_path = os.path.join("preprocess", self.data[idx]["mel_path"])
 
-        # convert to mono
-        if len(audio.shape) > 1:
-            audio = audio.mean(axis=1)
-        audio_array = torch.from_numpy(audio).float()
-
-        # resample
-        resample_rate = self.processor.sampling_rate
-        if resample_rate != sampling_rate:
-            resampler = T.Resample(sampling_rate, resample_rate)
-        else:
-            resampler = None
-        if resampler is None:
-            input_audio = audio_array
-        else:
-            input_audio = resampler(audio_array)
-        
-        # process and extract embeddings
-        inputs = self.processor(input_audio, sampling_rate=resample_rate, return_tensors="pt")
-        
-        for input_key in inputs.keys():
-            inputs[input_key] = inputs[input_key].squeeze(0)
-
-        output_data["inputs"] = inputs
-
-        mel = torch.from_numpy(np.load(os.path.join("preprocess", self.data[idx]["mel_path"]))).float()
-        output_data["mel"] = torch.zeros(mel.shape[0], self.target_seq_len)
-        if mel.shape[1] < self.target_seq_len:
-            output_data["mel"][:, :mel.shape[1]] = mel
-        elif mel.shape[1] >= self.target_seq_len:
-            output_data["mel"] = mel[:, :self.target_seq_len]
-
+        output_data["inputs"] = process_mert_format(audio_path)
+        output_data["mel"] = preprocess_mel(mel_path, self.target_seq_len)
         return output_data
 
+
+class ReconstrcutDatasetENCODEC(Data.Dataset):
+    def __init__(
+        self,
+        manifest_path,
+        mel_frame_rate,
+        input_sec,
+    ) -> None:
+        super().__init__()
+
+        with open(manifest_path) as f:
+            self.data = [json.loads(line) for line in f]
+
+        self.target_seq_len = int(mel_frame_rate * input_sec)
+        self.manifest_path = manifest_path
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        """
+        Return:
+            output_data: dict
+                {
+                    "inputs": dict,
+                    "mel": torch.tensor
+                }
+        """
+        output_data = dict()
+        # load audio
+        audio_path = os.path.join("preprocess", self.data[idx]["wav_path"])
+        mel_path = os.path.join("preprocess", self.data[idx]["mel_path"])
+
+        output_data["inputs"] = preprocess_encodec_format(audio_path)
+        output_data["mel"] = preprocess_mel(mel_path, self.target_seq_len)
+        return output_data
