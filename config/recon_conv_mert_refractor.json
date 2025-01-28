@@ -53,10 +53,10 @@
         },
         "logger": {
             "save_dir": "work_dir_mert",
-            "name": "log_new_data_128bands"
+            "name": "log_new_data_refractor"
         },
         "checkpoint": {
-            "dirpath": "work_dir_mert/weight_new_data_128bands",
+            "dirpath": "work_dir_mert/weight_new_data_refractor",
             "filename": "epoch={epoch}-val_loss-total={val/loss/total:.3f}",
             "auto_insert_metric_name": false,
             "monitor": "val/loss/total",
