@@ -6,6 +6,7 @@ import pytorch_lightning as pl
 import matplotlib.pyplot as plt
 import numpy as np
 
+from encodec import EncodecModel
 from .basemodel import get_base_model
 from .loss_fn import get_loss_fn
 
@@ -21,6 +22,10 @@ class ReconstructModel(pl.LightningModule):
         self.loss_fn = get_loss_fn()
         self.example_batch = None
 
+        self.encodec_frame_rate = 75
+        self.encodec_model = EncodecModel.encodec_model_24khz(pretrained=True).encoder
+        self.encodec_model.eval()
+
     def training_step(self, batch, batch_idx) -> Any:
         loss_dict, _ = self.common_step(batch)
 
@@ -34,7 +39,7 @@ class ReconstructModel(pl.LightningModule):
     def validation_step(self, batch, batch_idx) -> Any:
         loss_dict, mel_output = self.common_step(batch)
     
-        if self.example_batch is None and batch_idx == 0:
+        if batch_idx == 0:
             self.example_batch = batch
             self.example_batch["mel_pred"] = mel_output
         self.log_dict_prefix(loss_dict, "val")
@@ -44,10 +49,11 @@ class ReconstructModel(pl.LightningModule):
         return loss_dict["loss/total"]
 
     def on_validation_epoch_end(self):
+        # TODO: there is bug here; needs debugging
         if self.example_batch is not None:
-            for i in range(self.example_batch["mel"].shape[0]):
-                self.log_image(self.example_batch["mel"][i], "gt")
-                self.log_image(self.example_batch["mel_pred"][i], "pred")
+            for i in range(self.example_batch["mel"].shape[0] // 8):
+                self.log_image(self.example_batch["mel"][i], "gt_{}".format(i))
+                self.log_image(self.example_batch["mel_pred"][i], "pred_{}".format(i))
 
     def test_step(self, batch, batch_idx):
         loss_dict, _ = self.common_step(batch)
@@ -57,12 +63,14 @@ class ReconstructModel(pl.LightningModule):
         # self.test_metrics.update(logits, torch.round(batch["y"]), batch["y_mask"])
 
     def common_step(self, batch):
-        vggish = batch["vggish"]
+        audio = batch["audio"]
         mel = batch["mel"]
         
         loss_dict = dict()
 
-        model_output = self.model(vggish)
+        with torch.no_grad():
+            encodec = self.encodec_model(audio)
+        model_output = self.model(encodec)
         loss_dict = self.loss_fn(model_output, mel)
 
         total_loss = 0
@@ -72,6 +80,19 @@ class ReconstructModel(pl.LightningModule):
 
         # TODO: potentially log mel spectrogram here
         return loss_dict, model_output
+    
+    def inference_step(self, audio, encodec_path=None):
+        loss_dict = dict()
+
+        if encodec_path == None:
+            with torch.no_grad():
+                encodec = self.encodec_model(audio)
+        else:
+            encodec = torch.from_numpy(np.load(encodec_path))
+            encodec = encodec.unsqueeze(0).cuda()
+        model_output = self.model(encodec)
+
+        return model_output
 
     def log_dict_prefix(self, d, prefix):
         for k, v in d.items():

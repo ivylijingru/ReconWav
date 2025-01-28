@@ -1,5 +1,5 @@
 from .basic_mlp import basicMLP
-from .basic_conv import basicConv
+from .basic_conv_multi import basicConv
 
 
 def get_base_model(cfg: dict):
