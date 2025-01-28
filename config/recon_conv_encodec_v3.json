@@ -1,0 +1,72 @@
+{
+    "seed": 1223,
+    "data": {
+        "train_manifest_path": "nsynth/nsynth_train.json",
+        "val_manifest_path": "nsynth/nsynth_valid.json",
+        "test_manifest_path": "nsynth/nsynth_test.json",
+        "mel_frame_rate": 86,
+        "input_sec": 4,
+        "batch_size": 64,
+        "train_shuffle": true,
+        "num_workers": 16
+    },
+    "model": {
+        "conv": {
+            "args": {
+                "input_dim": 128,
+                "output_dim": 80,
+                "target_seq_len": 344
+            }
+        },
+        "optim": {
+            "optimizer": {
+                "name": "Adam",
+                "args": {
+                    "lr": 1e-4,
+                    "weight_decay": 0.0001
+                }
+            },
+            "scheduler": {
+                "name": "ReduceLROnPlateau",
+                "monitor": "val/loss/total",
+                "args": {
+                    "factor": 0.2,
+                    "patience": 10
+                }
+            }
+        }
+    },
+    "trainer": {
+        "args": {
+            "max_epochs": -1,
+            "max_steps": 100000,
+            "gradient_clip_val": 1.0,
+            "num_sanity_val_steps": -1,
+            "accelerator": "gpu",
+            "devices": [
+                0
+            ],
+            "deterministic": true,
+            "check_val_every_n_epoch": 1,
+            "log_every_n_steps": 10
+        },
+        "logger": {
+            "save_dir": "work_dir_encodec",
+            "name": "log_v3"
+        },
+        "checkpoint": {
+            "dirpath": "work_dir_encodec/weight_v3",
+            "filename": "epoch={epoch}-val_loss-total={val/loss/total:.3f}",
+            "auto_insert_metric_name": false,
+            "monitor": "val/loss/total",
+            "mode": "min",
+            "every_n_epochs": 1,
+            "save_top_k": 5
+        },
+        "early_stopping": {
+            "monitor": "val/loss/total",
+            "mode": "min",
+            "patience": 12
+        }
+    }
+}

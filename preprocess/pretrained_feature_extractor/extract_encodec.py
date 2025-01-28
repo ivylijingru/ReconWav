@@ -67,8 +67,10 @@ def batch_extract_encodec(file_paths, output_folder, encoder, batch_size=64):
             np.save(save_path, encoded_frames[j].cpu().numpy())
             print(f"Encoded frames saved to {save_path}")
 
-# if __name__ == '__main__':
-#     unittest.main()
+def extract_multiple_encodec_feature(input_dir, output_dir, fs=44100):
+    file_paths = [os.path.join(input_dir, f) for f in os.listdir(input_dir) if f.endswith(('.wav', '.mp3'))]
+    file_paths = file_paths[:2] # HACK!!!
+    batch_extract_encodec(file_paths, output_dir, encoder, batch_size=64)
 
 if __name__ == "__main__":
     input_folder = "/home/jli3268/nsynth-train/audio"
