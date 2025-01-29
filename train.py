@@ -5,7 +5,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 
 from data import ReconstructDataModule
-from models import ReconstructModel
+from models import ModelFactory
 
 
 def train(config):
@@ -19,7 +19,7 @@ def train(config):
     trainer_cfg = config["trainer"]
 
     datamodule = ReconstructDataModule(**data_cfg)
-    model = ReconstructModel(model_cfg)
+    model = ModelFactory.create_model(data_cfg["embed_type"], model_cfg)
 
     callbacks = [
         ModelCheckpoint(**trainer_cfg["checkpoint"]),
