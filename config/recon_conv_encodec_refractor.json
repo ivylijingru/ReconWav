@@ -4,7 +4,7 @@
         "embed_type": "encodec",
         "train_manifest_path": "nsynth/nsynth_train.json",
         "val_manifest_path": "nsynth/nsynth_valid.json",
-        "test_manifest_path": "nsynth/nsynth_test.json",
+        "test_manifest_path": "nsynth/nsynth_valid.json",
         "mel_frame_rate": 86,
         "input_sec": 4,
         "batch_size": 64,
