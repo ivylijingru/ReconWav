@@ -27,7 +27,7 @@ if __name__ == "__main__":
     root_dir = "../nsynth"
     train_audio_dir = "../../nsynth-train/audio"
     valid_audio_dir = "../../nsynth-valid/audio"
-    train_mel_dir = "mel_feature_train"
-    valid_mel_dir = "mel_feature_valid"
-    write_input_json(root_dir, train_audio_dir, train_mel_dir, "nsynth_train.json")
-    write_input_json(root_dir, valid_audio_dir, valid_mel_dir, "nsynth_valid.json")
+    train_mel_dir = "mel_feature_128_train"
+    valid_mel_dir = "mel_feature_128_valid"
+    write_input_json(root_dir, train_audio_dir, train_mel_dir, "nsynth_train_128bands.json")
+    write_input_json(root_dir, valid_audio_dir, valid_mel_dir, "nsynth_valid_128bands.json")
