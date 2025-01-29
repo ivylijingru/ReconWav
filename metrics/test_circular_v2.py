@@ -136,7 +136,7 @@ if __name__ == "__main__":
         "mert_recon": "../samples-bigvgan-mert-128/recon",
     }
 
-    features = ["Encodec", "VGGish"]  # , "MERT"]
+    features = ["Encodec", "VGGish", "MERT"]
 
     extractors = {
         "Encodec": extract_multiple_encodec_feature,
