@@ -67,7 +67,7 @@ class ReconstrcutDatasetENCODEC(Data.Dataset):
         Return:
             output_data: dict
                 {
-                    "inputs": dict,
+                    "audio": dict,
                     "mel": torch.tensor
                 }
         """
@@ -76,6 +76,6 @@ class ReconstrcutDatasetENCODEC(Data.Dataset):
         audio_path = os.path.join("preprocess", self.data[idx]["wav_path"])
         mel_path = os.path.join("preprocess", self.data[idx]["mel_path"])
 
-        output_data["inputs"] = preprocess_encodec_format(audio_path)
+        output_data["audio"] = preprocess_encodec_format(audio_path)
         output_data["mel"] = preprocess_mel(mel_path, self.target_seq_len)
         return output_data
