@@ -1,8 +1,8 @@
 # models/__init__.py
 from importlib import import_module
 
-from model_factory.encodec_model import ReconstructModelENCODEC
-from model_factory.mert_model import ReconstructModelMERT
+from .model_factory.encodec_model import ReconstructModelENCODEC
+from .model_factory.mert_model import ReconstructModelMERT
 
 
 class ModelFactory:
