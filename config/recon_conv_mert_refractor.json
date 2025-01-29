@@ -14,6 +14,7 @@
     "model": {
         "conv": {
             "args": {
+                "embed_type": "mert",
                 "input_dim": 768,
                 "output_dim": 128,
                 "target_seq_len": 689

@@ -1,8 +1,11 @@
-from .basic_mlp import basicMLP
-from .basic_conv_multi import basicConv
+from .basic_conv_multi_encodec import basicConvMERT
+from .basic_conv_multi_mert import basicConvENCODEC
 
 
 def get_base_model(cfg: dict):
-    model = basicConv(**cfg["args"])
+    if cfg["name"] == "mert":
+        model = basicConvMERT(**cfg["args"])
+    elif cfg["name"] == "encodec":
+        model = basicConvENCODEC(**cfg["args"])
 
     return model
