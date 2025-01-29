@@ -26,7 +26,7 @@ def extract_mert_features(audio_path):
     with torch.no_grad():
         outputs = mert_model(**inputs, output_hidden_states=True)
     model_output = outputs.hidden_states[-1]
-    model_output = model_output.transpose(-1, -2)
+    model_output = model_output.transpose(-1, -2).squeeze(0)
     return model_output
 
 
