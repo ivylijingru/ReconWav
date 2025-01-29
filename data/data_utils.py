@@ -36,7 +36,7 @@ def resample_audio(audio_array, original_rate, target_rate):
     return audio_array
 
 
-def process_mert_format(audio_path):
+def process_mert_format(audio_path, is_inference=False):
     processor = get_processor()
     """Process audio file with Wav2Vec2 processor and return the embeddings."""
     audio, sampling_rate = sf.read(audio_path)
@@ -59,8 +59,10 @@ def process_mert_format(audio_path):
     # process and extract embeddings
     inputs = processor(input_audio, sampling_rate=resample_rate, return_tensors="pt")
 
-    for input_key in inputs.keys():
-        inputs[input_key] = inputs[input_key].squeeze(0)
+    # squeeze batch dimension
+    if not is_inference:
+        for input_key in inputs.keys():
+            inputs[input_key] = inputs[input_key].squeeze(0)
 
     return inputs
 

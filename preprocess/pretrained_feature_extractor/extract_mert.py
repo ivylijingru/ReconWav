@@ -22,7 +22,7 @@ def extract_mert_features(audio_path):
     Returns:
         dict: Dictionary containing the extracted features.
     """
-    inputs = process_mert_format(audio_path)
+    inputs = process_mert_format(audio_path, is_inference=True)
     with torch.no_grad():
         outputs = mert_model(**inputs, output_hidden_states=True)
     model_output = outputs.hidden_states[-1]
