@@ -24,7 +24,9 @@ class ReconstructModel(pl.LightningModule):
         self.loss_fn = get_loss_fn()
         self.example_batch = None
 
-        self.mert_model = AutoModel.from_pretrained("m-a-p/MERT-v0-public", trust_remote_code=True)
+        self.mert_model = AutoModel.from_pretrained(
+            "m-a-p/MERT-v0-public", trust_remote_code=True
+        )
         self.mert_model.eval()
 
     def on_train_epoch_start(self):
@@ -44,12 +46,12 @@ class ReconstructModel(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx) -> Any:
         loss_dict, mel_output = self.common_step(batch)
-    
+
         if batch_idx == 0:
             self.example_batch = batch
             self.example_batch["mel_pred"] = mel_output
         self.log_dict_prefix(loss_dict, "val")
-        
+
         # self.val_metrics.update(logits, torch.round(batch["y"]), batch["y_mask"])
 
         return loss_dict["loss/total"]
@@ -71,7 +73,7 @@ class ReconstructModel(pl.LightningModule):
     def common_step(self, batch):
         inputs = batch["inputs"]
         mel = batch["mel"]
-        
+
         loss_dict = dict()
 
         with torch.no_grad():
@@ -90,14 +92,16 @@ class ReconstructModel(pl.LightningModule):
 
         # TODO: potentially log mel spectrogram here
         return loss_dict, model_output
-    
+
     def inference_step(self, audio):
         # process and extract embeddings
         # Assume that audio is already resampled
-        processor = Wav2Vec2FeatureExtractor.from_pretrained("m-a-p/MERT-v0-public",trust_remote_code=True)
+        processor = Wav2Vec2FeatureExtractor.from_pretrained(
+            "m-a-p/MERT-v0-public", trust_remote_code=True
+        )
         resample_rate = processor.sampling_rate
         inputs = processor(audio, sampling_rate=resample_rate, return_tensors="pt")
-        
+
         for input_key in inputs.keys():
             inputs[input_key] = inputs[input_key].squeeze(0).cuda()
 
@@ -120,7 +124,9 @@ class ReconstructModel(pl.LightningModule):
 
         # 使用 Matplotlib 将梅尔频谱图转换为彩色图像
         fig, ax = plt.subplots()
-        cax = ax.imshow(mel_spectrogram_np, aspect='auto', cmap='viridis')  # 选择一个彩色 colormap，比如 viridis
+        cax = ax.imshow(
+            mel_spectrogram_np, aspect="auto", cmap="viridis"
+        )  # 选择一个彩色 colormap，比如 viridis
         fig.colorbar(cax)
 
         # 将 Matplotlib 图像保存到内存中
@@ -129,7 +135,9 @@ class ReconstructModel(pl.LightningModule):
         img = img.reshape(fig.canvas.get_width_height()[::-1] + (3,))
 
         # 记录到 TensorBoard
-        self.logger.experiment.add_image('MelSpectrogram_{}'.format(note), img, self.current_epoch, dataformats='HWC')
+        self.logger.experiment.add_image(
+            "MelSpectrogram_{}".format(note), img, self.current_epoch, dataformats="HWC"
+        )
 
         # 关闭 Matplotlib 图像以释放内存
         plt.close(fig)
@@ -138,14 +146,19 @@ class ReconstructModel(pl.LightningModule):
         optimizer_cfg = self.optim_cfg["optimizer"]
         scheduler_cfg = self.optim_cfg["scheduler"]
 
-        optimizer = torch.optim.__dict__.get(optimizer_cfg["name"])(self.parameters(), **optimizer_cfg["args"])
-        scheduler = torch.optim.lr_scheduler.__dict__.get(scheduler_cfg["name"])(optimizer, **scheduler_cfg["args"])
+        optimizer = torch.optim.__dict__.get(optimizer_cfg["name"])(
+            self.parameters(), **optimizer_cfg["args"]
+        )
+        scheduler = torch.optim.lr_scheduler.__dict__.get(scheduler_cfg["name"])(
+            optimizer, **scheduler_cfg["args"]
+        )
         return dict(
             optimizer=optimizer,
             lr_scheduler=dict(
                 scheduler=scheduler,
                 monitor=scheduler_cfg["monitor"],
-            ))
+            ),
+        )
 
     def on_after_backward(self):
         # 在 backward 之后调用，用于监控梯度
@@ -154,6 +167,6 @@ class ReconstructModel(pl.LightningModule):
                 grad_mean = param.grad.mean()
                 grad_max = param.grad.max()
                 grad_min = param.grad.min()
-                self.log(f'grad_mean/{name}', grad_mean)
-                self.log(f'grad_max/{name}', grad_max)
-                self.log(f'grad_min/{name}', grad_min)
+                self.log(f"grad_mean/{name}", grad_mean)
+                self.log(f"grad_max/{name}", grad_max)
+                self.log(f"grad_min/{name}", grad_min)

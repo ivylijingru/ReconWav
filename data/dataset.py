@@ -35,7 +35,7 @@ class ReconstrcutDatasetMERT(Data.Dataset):
                 }
         """
         output_data = dict()
-        # load audio
+
         audio_path = os.path.join("preprocess", self.data[idx]["wav_path"])
         mel_path = os.path.join("preprocess", self.data[idx]["mel_path"])
 
@@ -72,7 +72,7 @@ class ReconstrcutDatasetENCODEC(Data.Dataset):
                 }
         """
         output_data = dict()
-        # load audio
+
         audio_path = os.path.join("preprocess", self.data[idx]["wav_path"])
         mel_path = os.path.join("preprocess", self.data[idx]["mel_path"])
 

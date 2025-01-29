@@ -1,13 +1,14 @@
 import os
 import random
 import json
+
 random.seed(2022)
 
 
 def write_input_json(root_dir, audio_dir, mel_dir, name):
     input_json = os.path.join(root_dir, name)
     input_json_f = open(input_json, "w")
-    
+
     data_list = []
     for file_name in os.listdir(audio_dir):
         wav_path = os.path.join(audio_dir, file_name)
@@ -18,11 +19,11 @@ def write_input_json(root_dir, audio_dir, mel_dir, name):
 
     for data in data_list:
         json.dump(data, input_json_f)
-        input_json_f.write('\n')
+        input_json_f.write("\n")
         input_json_f.flush()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     root_dir = "../nsynth"
     train_audio_dir = "../../nsynth-train/audio"
     valid_audio_dir = "../../nsynth-valid/audio"
