@@ -6,7 +6,7 @@ import numpy as np
 from tqdm import tqdm
 
 from transformers import AutoModel
-from ...data.data_utils import process_mert_format
+from data.data_utils import process_mert_format
 
 
 mert_model = AutoModel.from_pretrained("m-a-p/MERT-v0-public", trust_remote_code=True)
