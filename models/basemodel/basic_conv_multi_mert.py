@@ -215,7 +215,7 @@ if __name__ == "__main__":
     output_dim = 128
     target_seq_len = 689
 
-    model = basicConv(input_dim, output_dim, target_seq_len)
+    model = basicConvMERT(input_dim, output_dim, target_seq_len)
     x = torch.zeros(16, 768, 199)
     # 128 * 300
     print(model(x).shape)

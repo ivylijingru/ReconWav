@@ -96,7 +96,7 @@ class SEANetResnetBlock(nn.Module):
         return self.shortcut(x) + self.block(x)
 
 
-class basicConv(nn.Module):
+class basicConvENCODEC(nn.Module):
     def __init__(
         self,
         input_dim,
@@ -186,6 +186,6 @@ if __name__ == "__main__":
     output_dim = 80
     target_seq_len = 344
 
-    model = basicConv(input_dim, output_dim, target_seq_len)
+    model = basicConvENCODEC(input_dim, output_dim, target_seq_len)
     x = torch.zeros(16, 128, 300)
     print(model(x).shape)

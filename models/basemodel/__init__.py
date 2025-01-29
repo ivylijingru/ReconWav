@@ -1,5 +1,5 @@
-from .basic_conv_multi_encodec import basicConvMERT
-from .basic_conv_multi_mert import basicConvENCODEC
+from .basic_conv_multi_encodec import basicConvENCODEC
+from .basic_conv_multi_mert import basicConvMERT
 
 
 def get_base_model(cfg: dict):
