@@ -1,13 +1,19 @@
-
 import os
 import sys
 from tqdm import tqdm
 import numpy as np
 
-parent_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+parent_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, parent_folder)
-from preprocess.pretrained_feature_extractor.extract_encodec import extract_multiple_encodec_feature
-from preprocess.pretrained_feature_extractor.extract_vggish import extract_multiple_vggish_feature
+from preprocess.pretrained_feature_extractor.extract_encodec import (
+    extract_multiple_encodec_feature,
+)
+from preprocess.pretrained_feature_extractor.extract_vggish import (
+    extract_multiple_vggish_feature,
+)
+from preprocess.pretrained_feature_extractor.extract_mert import (
+    extract_multiple_mert_features,
+)
 
 
 def generate_output_dirs(input_dir_dict, features, base_output_dir="../features"):
@@ -29,6 +35,7 @@ def generate_output_dirs(input_dir_dict, features, base_output_dir="../features"
             for feature in features
         }
     return output_dirs
+
 
 def extract_features(input_dir_dict, output_dir_dict, features, extractors):
     """
@@ -62,7 +69,10 @@ def extract_features(input_dir_dict, output_dir_dict, features, extractors):
 
             extract_fn(input_dir, output_dir)  # Assume a default sampling rate of 16kHz
 
-def calculate_feature_differences(wav_type_list, output_dir_dict, features, base_output_dir="../features"):
+
+def calculate_feature_differences(
+    wav_type_list, output_dir_dict, features, base_output_dir="../features"
+):
     """
     Calculate the differences between features of two input directories.
 
@@ -106,13 +116,16 @@ def calculate_feature_differences(wav_type_list, output_dir_dict, features, base
             print(f"{feature}", f"{wav_type_list[1]}", "data1", "data2")
             print(data1.shape, data2.shape)
             print(np.linalg.norm(data1), np.linalg.norm(data2))
-            
-            diff = np.linalg.norm(data1 - data2) / np.linalg.norm(data1) # TODO: change this
+
+            diff = np.linalg.norm(data1 - data2) / np.linalg.norm(
+                data1
+            )  # TODO: change this
             diffs.append(diff)
 
         differences[feature] = np.mean(diffs) if diffs else None
 
     return differences
+
 
 if __name__ == "__main__":
 
@@ -123,22 +136,26 @@ if __name__ == "__main__":
         "mert_recon": "../samples-bigvgan-mert-128/recon",
     }
 
-    features = ["Encodec", "VGGish"] #, "MERT"]
+    features = ["Encodec", "VGGish"]  # , "MERT"]
 
     extractors = {
         "Encodec": extract_multiple_encodec_feature,
         "VGGish": extract_multiple_vggish_feature,
-        # "MERT": extract_mert_features,
+        "MERT": extract_multiple_mert_features,
     }
 
-    output_dir_dict = generate_output_dirs(input_dir_dict, features, base_output_dir="../features")
+    output_dir_dict = generate_output_dirs(
+        input_dir_dict, features, base_output_dir="../features"
+    )
     extract_features(input_dir_dict, output_dir_dict, features, extractors)
     input_wav_type_list = list(input_dir_dict.keys())
-    
+
     for wav_type in input_wav_type_list[1:]:
         wav_type_list = [input_wav_type_list[0], wav_type]
         # [reference index, current index]
-        differences = calculate_feature_differences(wav_type_list, output_dir_dict, features)
+        differences = calculate_feature_differences(
+            wav_type_list, output_dir_dict, features
+        )
 
         print(f"{wav_type}:")
         for feature, avg_diff in differences.items():
