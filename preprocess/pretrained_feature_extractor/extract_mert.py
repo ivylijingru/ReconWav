@@ -41,7 +41,7 @@ def extract_multiple_mert_features(input_dir, output_dir):
         None
     """
     input_file_list = [f for f in os.listdir(input_dir) if f.endswith((".wav", ".mp3"))]
-    input_file_list = input_file_list[:2]  # HACK!!!
+    # input_file_list = input_file_list[:2]  # HACK!!!
 
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
