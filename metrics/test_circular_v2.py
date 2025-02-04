@@ -193,5 +193,6 @@ if __name__ == "__main__":
         )
 
         print(f"{wav_type}:")
-        for feature, avg_diff in differences.items():
-            print(f"Average difference for {feature}: {avg_diff}")
+        for feature, diff_dict in differences.items():
+            for key, value in diff_dict.items():
+                print(f"{key} for {feature}: {value}")
