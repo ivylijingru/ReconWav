@@ -68,7 +68,6 @@ def batch_extract_encodec(file_paths, output_folder, encoder, batch_size=64):
             filename = os.path.splitext(os.path.basename(file_path))[0]
             save_path = os.path.join(output_folder, f"{filename}_encodec.npy")
             np.save(save_path, encoded_frames[j].cpu().numpy())
-            print(f"Encoded frames saved to {save_path}")
 
 
 def extract_multiple_encodec_feature(input_dir, output_dir, fs=44100):
