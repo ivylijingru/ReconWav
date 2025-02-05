@@ -121,6 +121,18 @@ def calculate_mean_difference(common_files, dir1, dir2):
         diff = np.linalg.norm(data1 - data2)
         diffs.append(diff)
 
+        import matplotlib.pyplot as plt
+        import seaborn as sns
+
+        # 使用 seaborn 画 KDE
+        sns.kdeplot(diffs, fill=True, color="blue", alpha=0.5)
+        plt.xlabel("Value")
+        plt.ylabel("Density")
+        plt.title("KDE Plot of Data Distribution")
+        plt.savefig(
+            f"histogram_{dir1}_{dir2}.png", dpi=300, bbox_inches="tight"
+        )  # dpi=300 提高清晰度
+
     # analyze the feature difference by mean, variance, etc.
     dict_diff = {
         "mean": np.mean(diffs),
