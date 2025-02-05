@@ -121,18 +121,6 @@ def calculate_mean_difference(common_files, dir1, dir2):
         diff = np.linalg.norm(data1 - data2)
         diffs.append(diff)
 
-        import matplotlib.pyplot as plt
-        import seaborn as sns
-
-        # 使用 seaborn 画 KDE
-        sns.kdeplot(diffs, fill=True, color="blue", alpha=0.5)
-        plt.xlabel("Value")
-        plt.ylabel("Density")
-        plt.title("KDE Plot of Data Distribution")
-        plt.savefig(
-            f"histogram_{dir1}_{dir2}.png", dpi=300, bbox_inches="tight"
-        )  # dpi=300 提高清晰度
-
     # analyze the feature difference by mean, variance, etc.
     dict_diff = {
         "mean": np.mean(diffs),
@@ -141,7 +129,27 @@ def calculate_mean_difference(common_files, dir1, dir2):
         "min": np.min(diffs),
     }
 
-    return dict_diff
+    return dict_diff, diffs
+
+
+def plot_distribution(diffs, input_wave_type, feature):
+    """
+    Plot the distribution of feature differences.
+    """
+
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+
+    # 使用 seaborn 画 KDE
+    sns.kdeplot(diffs, fill=True, color="blue", alpha=0.5)
+    plt.xlabel("Value")
+    plt.ylabel("Density")
+    plt.title("KDE Plot of Data Distribution")
+
+    plt.savefig(
+        f"histogram_{input_wave_type}_{feature}.png", dpi=300, bbox_inches="tight"
+    )  # dpi=300 提高清晰度
+    plt.close()
 
 
 def calculate_feature_differences(wav_type_list, output_dir_dict, features):
@@ -169,7 +177,10 @@ def calculate_feature_differences(wav_type_list, output_dir_dict, features):
         if not valid_flag:
             continue
 
-        differences[feature] = calculate_mean_difference(common_files, dir1, dir2)
+        differences[feature], diffs = calculate_mean_difference(
+            common_files, dir1, dir2
+        )
+        plot_distribution(diffs, wav_type_list[1], feature)
 
     return differences
 
