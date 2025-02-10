@@ -2,6 +2,9 @@ import os
 import sys
 from tqdm import tqdm
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 
 parent_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, parent_folder)
@@ -136,10 +139,6 @@ def plot_distribution(diffs, input_wave_type, feature):
     """
     Plot the distribution of feature differences.
     """
-
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-
     # 使用 seaborn 画 KDE
     sns.kdeplot(diffs, fill=True, color="blue", alpha=0.5)
     plt.xlabel("Value")
@@ -150,6 +149,25 @@ def plot_distribution(diffs, input_wave_type, feature):
         f"histogram_{input_wave_type}_{feature}.png", dpi=300, bbox_inches="tight"
     )  # dpi=300 提高清晰度
     plt.close()
+
+
+def plot_multiple_distributions(diff_dicts):
+    one_item, _ = diff_dicts[0]
+    print(one_item.keys())
+    plt.figure(figsize=(18, 6))
+    for ii, feature in enumerate(one_item.keys()):
+        plt.subplot(1, 3, ii+1)
+        for diff_dict, wav_type in diff_dicts:
+            sns.kdeplot(diff_dict[feature], fill=True, alpha=0.5, label=f"Wave Type {wav_type}")
+        
+        plt.legend()
+        plt.xlabel("Value")
+        plt.ylabel("Density")
+        plt.title(f"KDE plot for {feature}")
+
+    plt.savefig(
+        f"histogram.png", dpi=300, bbox_inches="tight"
+    )  # dpi=300 提高清晰度
 
 
 def calculate_feature_differences(wav_type_list, output_dir_dict, features):
@@ -168,6 +186,7 @@ def calculate_feature_differences(wav_type_list, output_dir_dict, features):
         raise ValueError("Exactly two input directories are required for comparison.")
 
     differences = {}
+    diff_dict = {}
 
     for feature in features:
         dir1 = output_dir_dict[wav_type_list[0]][feature]
@@ -180,9 +199,10 @@ def calculate_feature_differences(wav_type_list, output_dir_dict, features):
         differences[feature], diffs = calculate_mean_difference(
             common_files, dir1, dir2
         )
-        plot_distribution(diffs, wav_type_list[1], feature)
-
-    return differences
+    
+        diff_dict[feature] = diffs
+    
+    return differences, diff_dict
 
 
 if __name__ == "__main__":
@@ -205,17 +225,21 @@ if __name__ == "__main__":
     output_dir_dict = generate_output_dirs(
         input_dir_dict, features, base_output_dir="../features"
     )
-    extract_features(input_dir_dict, output_dir_dict, features, extractors)
+    # extract_features(input_dir_dict, output_dir_dict, features, extractors)
     input_wav_type_list = list(input_dir_dict.keys())
 
+    diff_dicts = []
     for wav_type in input_wav_type_list[1:]:
         wav_type_list = [input_wav_type_list[0], wav_type]
         # [reference index, current index]
-        differences = calculate_feature_differences(
+        differences, diff_dict = calculate_feature_differences(
             wav_type_list, output_dir_dict, features
         )
+        diff_dicts.append([diff_dict, wav_type])
 
         print(f"{wav_type}:")
         for feature, diff_dict in differences.items():
             for key, value in diff_dict.items():
                 print(f"{key} for {feature}: {value}")
+
+    plot_multiple_distributions(diff_dicts)
