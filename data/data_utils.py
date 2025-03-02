@@ -87,7 +87,12 @@ def preprocess_mel(mel_path, target_seq_len):
     return tmp_data
 
 
-def preprocess_codebook(cb_path):
+def preprocess_codebook(cb_path, target_seq_len):
     """Preprocess codebook and pad or truncate to the target sequence length."""
     codebook = torch.from_numpy(np.load(cb_path)).long()
-    return codebook
+    tmp_data = torch.zeros(target_seq_len)
+    if codebook.shape[0] < target_seq_len:
+        tmp_data[: codebook.shape[0]] = codebook
+    elif codebook.shape[0] >= target_seq_len:
+        tmp_data = codebook[:target_seq_len]
+    return tmp_data
