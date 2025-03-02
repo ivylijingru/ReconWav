@@ -121,7 +121,6 @@ class ReconstructionDatasetMERTCodebook(Data.Dataset):
         )  # 假设manifest包含codebook路径
 
         output_data["inputs"] = process_mert_format(audio_path)
-        output_data["codebook"] = preprocess_codebook(
-            codebook_path, self.target_seq_len
-        )
+        output_data["codebook"] = preprocess_codebook(codebook_path)
+        assert output_data is not None
         return output_data
