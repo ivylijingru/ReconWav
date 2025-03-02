@@ -21,7 +21,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .conv import SConv1d, NormConvTranspose1d
+from conv import SConv1d, NormConvTranspose1d
 
 
 class SEANetResnetBlock(nn.Module):
@@ -96,20 +96,15 @@ class SEANetResnetBlock(nn.Module):
         return self.shortcut(x) + self.block(x)
 
 
-class basicConvENCODEC(nn.Module):
+class basicConvMERT(nn.Module):
     def __init__(
         self,
         input_dim,
         output_dim,
-        target_seq_len,  # this guy is around 344 for 4 seconds
+        target_seq_len,  # Target sequence length (300)
     ) -> None:
         super().__init__()
         self.target_seq_len = target_seq_len
-        # 计算卷积核大小和步幅，确保输入的 time_stamp1 能够映射到输出的 time_stamp2
-        padding = 0  # 可以根据需求调整
-        output_padding = 0  # 当需要精准控制输出尺寸时，可以设置
-
-        stride1 = 1  # 可以根据需求调整
 
         activation: str = "ELU"
         activation_params: dict = {"alpha": 1.0}
@@ -122,18 +117,20 @@ class basicConvENCODEC(nn.Module):
         true_skip: bool = False
         compress: int = 2
 
+        # 主要修改部分
+        # Stage 1: 将长度从199扩展到300
         self.deconv1 = NormConvTranspose1d(
             in_channels=input_dim,
-            out_channels=output_dim,
-            kernel_size=23 * stride1,
-            stride=stride1,
-            padding=padding,
-            output_padding=output_padding,
+            out_channels=input_dim,
+            kernel_size=102,  # 精确控制输出长度
+            stride=1,
+            padding=0,
+            output_padding=0,
             norm=norm,
         )
 
         self.res_block1 = SEANetResnetBlock(
-            output_dim,
+            input_dim,
             kernel_sizes=[residual_kernel_size, 1],
             dilations=[dilation_base**1, 1],
             activation=activation,
@@ -146,17 +143,43 @@ class basicConvENCODEC(nn.Module):
             true_skip=true_skip,
         )
 
+        # Stage 2: 保持长度300
         self.deconv2 = NormConvTranspose1d(
-            in_channels=output_dim,
-            out_channels=output_dim,
-            kernel_size=23 * stride1,
-            stride=stride1,
-            padding=padding,
-            output_padding=output_padding,
+            in_channels=input_dim,
+            out_channels=input_dim,
+            kernel_size=3,  # 保持长度的卷积参数
+            stride=1,
+            padding=1,  # 保持长度关键参数
+            output_padding=0,
             norm=norm,
         )
 
         self.res_block2 = SEANetResnetBlock(
+            input_dim,
+            kernel_sizes=[residual_kernel_size, 1],
+            dilations=[dilation_base**1, 1],
+            activation=activation,
+            activation_params=activation_params,
+            norm=norm,
+            norm_params=norm_params,
+            causal=causal,
+            pad_mode=pad_mode,
+            compress=compress,
+            true_skip=true_skip,
+        )
+
+        # Stage 3: 通道数调整到1024
+        self.deconv3 = NormConvTranspose1d(
+            in_channels=input_dim,
+            out_channels=output_dim,  # 最终输出通道1024
+            kernel_size=3,
+            stride=1,
+            padding=1,
+            output_padding=0,
+            norm=norm,
+        )
+
+        self.res_block3 = SEANetResnetBlock(
             output_dim,
             kernel_sizes=[residual_kernel_size, 1],
             dilations=[dilation_base**1, 1],
@@ -169,24 +192,31 @@ class basicConvENCODEC(nn.Module):
             compress=compress,
             true_skip=true_skip,
         )
-        self.activation = nn.ELU()
+
+        self.activation1 = nn.ELU()
+        self.activation2 = nn.ELU()
 
     def forward(self, x):
         # [batch_size, shape_latent, seq_len_latent]
-        output = self.deconv1(x)
+        output = self.deconv1(x)  # [16, 768, 300]
         output = self.res_block1(output)
-        output = self.activation(output)
-        output = self.deconv2(output)
+        output = self.activation1(output)
+
+        output = self.deconv2(output)  # [16, 768, 300]
         output = self.res_block2(output)
-        return output  # [batch_size, shape_latent, seq_len_target]
+        output = self.activation2(output)
+
+        output = self.deconv3(output)  # [16, 1024, 300]
+        output = self.res_block3(output)
+        return output
 
 
 if __name__ == "__main__":
-    input_dim = 128
-    output_dim = 80
-    target_seq_len = 344
+    input_dim = 768
+    output_dim = 1024
+    target_seq_len = 689
 
-    model = basicConvENCODEC(input_dim, output_dim, target_seq_len)
-    x = torch.zeros(16, 128, 300)
-    # [16, 80, 344] ==> [bs, bandwidth, time_step]
+    model = basicConvMERT(input_dim, output_dim, target_seq_len)
+    x = torch.zeros(16, 768, 199)
+    # 1024 * 300
     print(model(x).shape)
