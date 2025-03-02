@@ -21,7 +21,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from conv import SConv1d, NormConvTranspose1d
+from .conv import SConv1d, NormConvTranspose1d
 
 
 class SEANetResnetBlock(nn.Module):
