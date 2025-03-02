@@ -16,7 +16,7 @@
             "embed_type": "mert_cb0",
             "args": {
                 "input_dim": 768,
-                "output_dim": 128,
+                "output_dim": 1024,
                 "target_seq_len": 689
             }
         },
