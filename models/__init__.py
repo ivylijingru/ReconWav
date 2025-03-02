@@ -3,6 +3,7 @@ from importlib import import_module
 
 from .model_factory.encodec_model import ReconstructModelENCODEC
 from .model_factory.mert_model import ReconstructModelMERT
+from .model_factory.mert_cb0_model import ReconstructModelMERTcb0
 
 
 class ModelFactory:
@@ -17,5 +18,7 @@ class ModelFactory:
                 return ReconstructModelMERT(config)
             elif embed_type == "encodec":
                 return ReconstructModelENCODEC(config)
+            elif embed_type == "mert_cb0":
+                return ReconstructModelMERTcb0(config)
         except ImportError:
             raise ValueError(f"Unsupported model type: {embed_type}")
