@@ -25,10 +25,10 @@ def write_input_json(root_dir, audio_dir, cb0_dir, name):
 
 if __name__ == "__main__":
     root_dir = "../nsynth"
-    train_audio_dir = "../../nsynth/nsynth-test/audio"
-    # valid_audio_dir = "../../nsynth-valid/audio"
-    valid_audio_dir = train_audio_dir
-    train_cb0_dir = "../../reconwav_data/encodec_cb0/test"
-    valid_cb0_dir = train_cb0_dir
+    train_audio_dir = "../../nsynth/nsynth-train/audio"
+    valid_audio_dir = "../../nsynth-valid/audio"
+
+    train_cb0_dir = "../../reconwav_data/encodec_cb0/train"
+    valid_cb0_dir = "../../reconwav_data/encodec_cb0/valid"
     write_input_json(root_dir, train_audio_dir, train_cb0_dir, "nsynth_train_cb0.json")
     write_input_json(root_dir, valid_audio_dir, valid_cb0_dir, "nsynth_valid_cb0.json")
