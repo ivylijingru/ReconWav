@@ -1,7 +1,7 @@
 {
     "seed": 1223,
     "data": {
-        "embed_type": "mert",
+        "embed_type": "mert_cb0",
         "train_manifest_path": "nsynth/nsynth_train_cb0.json",
         "val_manifest_path": "nsynth/nsynth_valid_cb0.json",
         "test_manifest_path": "nsynth/nsynth_valid_cb0.json",
@@ -13,7 +13,7 @@
     },
     "model": {
         "conv": {
-            "embed_type": "mert",
+            "embed_type": "mert_cb0",
             "args": {
                 "input_dim": 768,
                 "output_dim": 128,
