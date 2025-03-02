@@ -20,7 +20,7 @@ class ReconstructModelMERT(pl.LightningModule):
 
         self.optim_cfg = configs["optim"]
         self.model = get_base_model(configs["conv"])
-        self.loss_fn = get_loss_fn()
+        self.loss_fn = get_loss_fn(configs["loss"])
         self.example_batch = None
 
         self.mert_model = AutoModel.from_pretrained(
