@@ -4,7 +4,7 @@ import os
 import torch.utils.data as Data
 
 from data.data_utils import process_mert_format, preprocess_encodec_format
-from data.data_utils import preprocess_mel
+from data.data_utils import preprocess_mel, preprocess_codebook
 
 
 class ReconstrcutDatasetMERT(Data.Dataset):
@@ -121,5 +121,7 @@ class ReconstructionDatasetMERTCodebook(Data.Dataset):
         )  # 假设manifest包含codebook路径
 
         output_data["inputs"] = process_mert_format(audio_path)
-        output_data["codebook"] = preprocess_mel(codebook_path, self.target_seq_len)
+        output_data["codebook"] = preprocess_codebook(
+            codebook_path, self.target_seq_len
+        )
         return output_data
