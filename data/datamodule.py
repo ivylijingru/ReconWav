@@ -1,7 +1,11 @@
 import torch.utils.data as Data
 import pytorch_lightning as pl
 
-from .dataset import ReconstrcutDatasetMERT, ReconstrcutDatasetENCODEC
+from .dataset import (
+    ReconstrcutDatasetMERT,
+    ReconstrcutDatasetENCODEC,
+    ReconstructionDatasetMERTCodebook,
+)
 
 
 class ReconstructDataModule(pl.LightningDataModule):
@@ -25,6 +29,7 @@ class ReconstructDataModule(pl.LightningDataModule):
         dataset_dict = {
             "mert": ReconstrcutDatasetMERT,
             "encodec": ReconstrcutDatasetENCODEC,
+            "mert_cb0": ReconstructionDatasetMERTCodebook,
         }
 
         if embed_type not in dataset_dict:
