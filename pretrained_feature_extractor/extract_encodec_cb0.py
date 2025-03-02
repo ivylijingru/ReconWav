@@ -76,7 +76,7 @@ def batch_process(input_dir: str, output_dir: str):
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
 
-    print(f"\n处理完成！成功处理 {success_count}/{len(audio_files)} 个文件")
+    print(f"\n处理完成 成功处理 {success_count}/{len(audio_files)} 个文件")
 
 
 if __name__ == "__main__":
