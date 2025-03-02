@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 
 
-class ReconLoss(nn.Module):
+class CELoss(nn.Module):
     def __init__(self):
-        super(ReconLoss, self).__init__()
+        super(CELoss, self).__init__()
         self.ce_loss = nn.CrossEntropyLoss()  # 改为交叉熵损失
 
     def forward(self, logits, target_indices):
