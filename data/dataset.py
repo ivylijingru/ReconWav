@@ -116,9 +116,7 @@ class ReconstructionDatasetMERTCodebook(Data.Dataset):
         output_data = dict()
 
         audio_path = os.path.join("preprocess", self.data[idx]["wav_path"])
-        codebook_path = os.path.join(
-            "codebooks", self.data[idx]["cb0_path"]
-        )  # 假设manifest包含codebook路径
+        codebook_path = self.data[idx]["cb0_path"]  # 假设manifest包含codebook路径
 
         output_data["inputs"] = process_mert_format(audio_path)
         output_data["codebook"] = preprocess_mel(codebook_path, self.target_seq_len)
