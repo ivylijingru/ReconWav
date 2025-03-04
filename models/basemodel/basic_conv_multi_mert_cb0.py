@@ -122,7 +122,7 @@ class basicConvMERT(nn.Module):
         self.deconv1 = NormConvTranspose1d(
             in_channels=input_dim,
             out_channels=input_dim,
-            kernel_size=102,  # 精确控制输出长度
+            kernel_size=34,  # 精确控制输出长度
             stride=1,
             padding=0,
             output_padding=0,
@@ -147,9 +147,9 @@ class basicConvMERT(nn.Module):
         self.deconv2 = NormConvTranspose1d(
             in_channels=input_dim,
             out_channels=input_dim,
-            kernel_size=3,  # 保持长度的卷积参数
+            kernel_size=35,  # 保持长度的卷积参数
             stride=1,
-            padding=1,  # 保持长度关键参数
+            padding=0,  # 保持长度关键参数
             output_padding=0,
             norm=norm,
         )
@@ -172,9 +172,9 @@ class basicConvMERT(nn.Module):
         self.deconv3 = NormConvTranspose1d(
             in_channels=input_dim,
             out_channels=output_dim,  # 最终输出通道1024
-            kernel_size=3,
+            kernel_size=35,
             stride=1,
-            padding=1,
+            padding=0,
             output_padding=0,
             norm=norm,
         )
