@@ -89,6 +89,7 @@ class ReconstructionDatasetMERTCodebook(Data.Dataset):
         manifest_path,
         codebook_frame_rate,  # 修改为codebook帧率（Encodec通常为75Hz）
         input_sec,
+        mert_version,
     ) -> None:
         super().__init__()
 
@@ -100,6 +101,7 @@ class ReconstructionDatasetMERTCodebook(Data.Dataset):
             codebook_frame_rate * input_sec
         )  # 例如 75Hz * 2s = 150
         self.manifest_path = manifest_path
+        self.mert_version = mert_version
 
     def __len__(self):
         return len(self.data)
@@ -120,7 +122,7 @@ class ReconstructionDatasetMERTCodebook(Data.Dataset):
             "preprocess", self.data[idx]["cb0_path"]
         )  # 假设manifest包含codebook路径
 
-        output_data["inputs"] = process_mert_format(audio_path)
+        output_data["inputs"] = process_mert_format(audio_path, self.mert_version)
         output_data["codebook"] = preprocess_codebook(codebook_path)
         assert output_data is not None
         return output_data

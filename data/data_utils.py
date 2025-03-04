@@ -11,11 +11,11 @@ ECODEC_SR = 24000
 _processor = None
 
 
-def get_processor():
+def get_processor(mert_version):
     global _processor
     if _processor is None:
         _processor = Wav2Vec2FeatureExtractor.from_pretrained(
-            "m-a-p/MERT-v0-public", trust_remote_code=True
+            mert_version, trust_remote_code=True
         )
     return _processor
 
@@ -36,8 +36,8 @@ def resample_audio(audio_array, original_rate, target_rate):
     return audio_array
 
 
-def process_mert_format(audio_path, is_inference=False):
-    processor = get_processor()
+def process_mert_format(audio_path, mert_version, is_inference=False):
+    processor = get_processor(mert_version)
     """Process audio file with Wav2Vec2 processor and return the embeddings."""
     audio, sampling_rate = sf.read(audio_path)
     # convert to mono

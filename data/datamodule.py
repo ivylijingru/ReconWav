@@ -15,6 +15,7 @@ class ReconstructDataModule(pl.LightningDataModule):
         train_manifest_path,
         val_manifest_path,
         test_manifest_path,
+        mert_version,
         mel_frame_rate,
         input_sec,
         batch_size,
@@ -36,13 +37,13 @@ class ReconstructDataModule(pl.LightningDataModule):
             raise ValueError(f"embed_type {embed_type} not supported")
 
         self.train_dataset = dataset_dict[embed_type](
-            train_manifest_path, mel_frame_rate, input_sec
+            train_manifest_path, mel_frame_rate, input_sec, mert_version
         )
         self.val_dataset = dataset_dict[embed_type](
-            val_manifest_path, mel_frame_rate, input_sec
+            val_manifest_path, mel_frame_rate, input_sec, mert_version
         )
         self.test_dataset = dataset_dict[embed_type](
-            test_manifest_path, mel_frame_rate, input_sec
+            test_manifest_path, mel_frame_rate, input_sec, mert_version
         )
 
         self.batch_size = batch_size

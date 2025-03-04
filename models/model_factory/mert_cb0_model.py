@@ -23,8 +23,10 @@ class ReconstructModelMERTcb0(pl.LightningModule):
         self.loss_fn = get_loss_fn(configs["loss"])
         self.example_batch = None
 
+        self.mert_version = configs["mert_version"]
+
         self.mert_model = AutoModel.from_pretrained(
-            "m-a-p/MERT-v0-public", trust_remote_code=True
+            self.mert_version, trust_remote_code=True
         )
         self.mert_model.eval()
 
@@ -92,26 +94,22 @@ class ReconstructModelMERTcb0(pl.LightningModule):
         # TODO: potentially log mel spectrogram here
         return loss_dict, model_output
 
-    def inference_step(self, audio):
+    def inference_step(self, audio_path):
         # process and extract embeddings
         # Assume that audio is already resampled
-        processor = Wav2Vec2FeatureExtractor.from_pretrained(
-            "m-a-p/MERT-v0-public", trust_remote_code=True
-        )
-        resample_rate = processor.sampling_rate
-        inputs = processor(audio, sampling_rate=resample_rate, return_tensors="pt")
-
+        from data.data_utils import process_mert_format
+        inputs = process_mert_format(audio_path, is_inference=True)
         for input_key in inputs.keys():
-            inputs[input_key] = inputs[input_key].squeeze(0).cuda()
+            inputs[input_key] = inputs[input_key].cuda()
 
         with torch.no_grad():
             outputs = self.mert_model(**inputs, output_hidden_states=True)
-        model_output = outputs.hidden_states[-1]
-        model_output = model_output.transpose(-1, -2)
+            model_output = outputs.hidden_states[-1]
+            model_output = model_output.transpose(-1, -2)
 
-        model_output = self.model(model_output)
+            model_output = self.model(model_output)
 
-        return model_output
+        return model_output, outputs.hidden_states[-1]
 
     def log_dict_prefix(self, d, prefix):
         for k, v in d.items():
